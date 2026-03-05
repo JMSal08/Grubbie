@@ -5,7 +5,6 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Zap, ShieldCheck, Utensils } from 'lucide-react';
 import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
 
 export default function Home() {
   const [cartCount, setCartCount] = useState(0);
@@ -19,10 +18,8 @@ export default function Home() {
         <section className="relative h-[80vh] flex items-center bg-[#DBAF70]/10 overflow-hidden text-center">
           <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto space-y-8">
-              <Badge className="bg-primary/20 text-accent border-none px-4 py-1">Best Choice for Students</Badge>
               <h1 className="text-5xl md:text-8xl font-headline font-extrabold text-accent leading-tight">
-                Skip the lines. <br />
-                <span className="text-primary">Pre-order</span> your favorites.
+                Get your Grub in no time, with <span className="text-primary">Grubbie.</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Fresh, hot meals from your favorite campus cafeterias and local spots, ready whenever you are.
@@ -45,7 +42,7 @@ export default function Home() {
             <div className="grid md:grid-cols-3 gap-12">
               <div className="bg-card p-8 rounded-3xl text-center space-y-4 shadow-sm border border-border/50">
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <Zap className="h-8 w-8 text-primary" />
+                  < Zap className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-headline font-bold">Fast Pickups</h3>
                 <p className="text-muted-foreground">Order in advance and skip the long lunch hour queues entirely.</p>
@@ -101,7 +98,7 @@ export default function Home() {
           </div>
         </div>
         <div className="container mx-auto px-4 mt-16 pt-8 border-t border-white/10 text-center opacity-50 text-sm">
-          © 2024 Grubbie. All rights reserved.
+          © 2026 Grubbie. All rights reserved.
         </div>
       </footer>
     </div>
