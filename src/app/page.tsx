@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { FoodCard } from '@/components/food/FoodCard';
-import { MOCK_FOOD } from '@/lib/mock-data';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, Utensils, Zap, ShieldCheck } from 'lucide-react';
+import { Zap, ShieldCheck, Utensils } from 'lucide-react';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default function Home() {
   const [cartCount, setCartCount] = useState(0);
@@ -45,31 +44,6 @@ export default function Home() {
                 className="relative z-10 w-full h-full object-cover rounded-[40px] shadow-2xl"
                 data-ai-hint="delicious food"
               />
-            </div>
-          </div>
-        </section>
-
-        {/* Categories / Filters */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
-            <div className="flex justify-between items-end mb-12">
-              <div className="space-y-2">
-                <h2 className="text-3xl font-headline font-bold text-accent">Hot & Popular</h2>
-                <p className="text-muted-foreground">Most ordered items this week</p>
-              </div>
-              <Button variant="ghost" className="text-primary font-bold gap-2">
-                View All <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {MOCK_FOOD.map((item) => (
-                <FoodCard 
-                  key={item.id} 
-                  item={item} 
-                  onAddToCart={() => setCartCount(c => c + 1)} 
-                />
-              ))}
             </div>
           </div>
         </section>
@@ -142,5 +116,3 @@ export default function Home() {
     </div>
   );
 }
-
-import { Badge } from '@/components/ui/badge';
