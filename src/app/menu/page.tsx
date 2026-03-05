@@ -3,19 +3,26 @@
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { FoodCard } from '@/components/food/FoodCard';
-import { MOCK_FOOD } from '@/lib/mock-data';
+import { VendorCard } from '@/components/vendor/VendorCard';
+import { MOCK_FOOD, MOCK_VENDORS } from '@/lib/mock-data';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, Filter, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 export default function MenuPage() {
   const [cartCount, setCartCount] = useState(0);
   const [search, setSearch] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
 
   const filteredFood = MOCK_FOOD.filter(item => 
     item.name.toLowerCase().includes(search.toLowerCase()) || 
     item.description.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const filteredVendors = MOCK_VENDORS.filter(vendor => 
+    vendor.name.toLowerCase().includes(search.toLowerCase()) || 
+    vendor.description.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -26,14 +33,16 @@ export default function MenuPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
-              <h1 className="text-4xl font-headline font-bold text-accent">Menu</h1>
-              <p className="text-muted-foreground mt-1">Explore delicious meals from all around campus</p>
+              <h1 className="text-4xl font-headline font-bold text-accent">Discover</h1>
+              <p className="text-muted-foreground mt-1">
+                {activeTab === 'all' ? 'Explore delicious meals from all around campus' : 'Find your favorite dining spots'}
+              </p>
             </div>
             <div className="flex w-full md:w-auto gap-4">
               <div className="relative flex-1 md:w-80">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="What are you craving?" 
+                  placeholder={activeTab === 'all' ? "What are you craving?" : "Search restaurants..."} 
                   className="pl-10 h-12 rounded-full border-muted bg-secondary/50 focus:bg-white"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -48,7 +57,7 @@ export default function MenuPage() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
           <div className="flex justify-center mb-12">
             <TabsList className="h-14 p-1 rounded-full bg-secondary/50 border border-muted">
               <TabsTrigger value="all" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">All Food</TabsTrigger>
@@ -62,22 +71,37 @@ export default function MenuPage() {
               {filteredFood.map((item) => (
                 <FoodCard key={item.id} item={item} onAddToCart={() => setCartCount(c => c + 1)} />
               ))}
+              {filteredFood.length === 0 && (
+                <div className="col-span-full py-20 text-center">
+                  <p className="text-muted-foreground">No meals found matching your search.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="Cafeteria" className="mt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredFood.filter(i => i.category === 'Cafeteria').map((item) => (
-                <FoodCard key={item.id} item={item} onAddToCart={() => setCartCount(c => c + 1)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredVendors.filter(v => v.category === 'Cafeteria').map((vendor) => (
+                <VendorCard key={vendor.id} vendor={vendor} />
               ))}
+              {filteredVendors.filter(v => v.category === 'Cafeteria').length === 0 && (
+                <div className="col-span-full py-20 text-center">
+                  <p className="text-muted-foreground">No restaurants found in Cafeteria.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="SouthPoint" className="mt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {filteredFood.filter(i => i.category === 'SouthPoint').map((item) => (
-                <FoodCard key={item.id} item={item} onAddToCart={() => setCartCount(c => c + 1)} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredVendors.filter(v => v.category === 'SouthPoint').map((vendor) => (
+                <VendorCard key={vendor.id} vendor={vendor} />
               ))}
+              {filteredVendors.filter(v => v.category === 'SouthPoint').length === 0 && (
+                <div className="col-span-full py-20 text-center">
+                  <p className="text-muted-foreground">No restaurants found in SouthPoint.</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>

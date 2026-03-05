@@ -11,6 +11,17 @@ export interface User {
 
 export type FoodCategory = 'Cafeteria' | 'SouthPoint';
 
+export interface Vendor {
+  id: string;
+  name: string;
+  description: string;
+  imageUrl: string;
+  category: FoodCategory;
+  rating: number;
+  reviewsCount: number;
+  location: string;
+}
+
 export interface FoodItem {
   id: string;
   name: string;
