@@ -1,3 +1,40 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-food",
+      "description": "Delicious campus meal",
+      "imageUrl": "https://picsum.photos/seed/grubbie1/1200/800",
+      "imageHint": "delicious food"
+    },
+    {
+      "id": "burger",
+      "description": "Juicy cheeseburger",
+      "imageUrl": "https://picsum.photos/seed/burger/600/400",
+      "imageHint": "burger"
+    },
+    {
+      "id": "pasta",
+      "description": "Creamy carbonara",
+      "imageUrl": "https://picsum.photos/seed/pasta/600/400",
+      "imageHint": "pasta"
+    },
+    {
+      "id": "salad",
+      "description": "Fresh garden salad",
+      "imageUrl": "https://picsum.photos/seed/salad/600/400",
+      "imageHint": "salad"
+    },
+    {
+      "id": "coffee",
+      "description": "Hot latte",
+      "imageUrl": "https://picsum.photos/seed/coffee/600/400",
+      "imageHint": "coffee"
+    },
+    {
+      "id": "pizza",
+      "description": "Pepperoni pizza",
+      "imageUrl": "https://picsum.photos/seed/pizza/600/400",
+      "imageHint": "pizza"
+    }
+  ]
 }

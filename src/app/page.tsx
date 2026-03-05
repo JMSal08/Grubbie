@@ -1,3 +1,146 @@
+"use client";
+
+import { useState } from 'react';
+import { Navbar } from '@/components/layout/Navbar';
+import { FoodCard } from '@/components/food/FoodCard';
+import { MOCK_FOOD } from '@/lib/mock-data';
+import { Button } from '@/components/ui/button';
+import { ChevronRight, Utensils, Zap, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
+
 export default function Home() {
-  return <></>;
+  const [cartCount, setCartCount] = useState(0);
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar cartCount={cartCount} />
+      
+      <main className="flex-1">
+        {/* Hero Section */}
+        <section className="relative h-[80vh] flex items-center bg-[#DBAF70]/10 overflow-hidden">
+          <div className="container mx-auto px-4 relative z-10 grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <Badge className="bg-primary/20 text-accent border-none px-4 py-1">Best Choice for Students</Badge>
+              <h1 className="text-5xl md:text-7xl font-headline font-extrabold text-accent leading-tight">
+                Skip the lines. <br />
+                <span className="text-primary">Pre-order</span> your favorites.
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-lg">
+                Fresh, hot meals from your favorite campus cafeterias and local spots, ready whenever you are.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button size="lg" className="rounded-full px-8 h-14 text-lg font-bold" asChild>
+                  <Link href="/menu">Browse Menu</Link>
+                </Button>
+                <Button size="lg" variant="outline" className="rounded-full px-8 h-14 text-lg font-bold border-accent text-accent hover:bg-accent hover:text-white">
+                  Join as Vendor
+                </Button>
+              </div>
+            </div>
+            <div className="relative hidden md:block h-[500px]">
+              <div className="absolute inset-0 bg-primary/20 rounded-[40px] rotate-6 transform" />
+              <img 
+                src="https://picsum.photos/seed/grubbie1/800/800" 
+                alt="Delicious meal" 
+                className="relative z-10 w-full h-full object-cover rounded-[40px] shadow-2xl"
+                data-ai-hint="delicious food"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Categories / Filters */}
+        <section className="py-20 bg-white">
+          <div className="container mx-auto px-4">
+            <div className="flex justify-between items-end mb-12">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-headline font-bold text-accent">Hot & Popular</h2>
+                <p className="text-muted-foreground">Most ordered items this week</p>
+              </div>
+              <Button variant="ghost" className="text-primary font-bold gap-2">
+                View All <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {MOCK_FOOD.map((item) => (
+                <FoodCard 
+                  key={item.id} 
+                  item={item} 
+                  onAddToCart={() => setCartCount(c => c + 1)} 
+                />
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features */}
+        <section className="py-20 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-3 gap-12">
+              <div className="bg-card p-8 rounded-3xl text-center space-y-4 shadow-sm border border-border/50">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Zap className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-headline font-bold">Fast Pickups</h3>
+                <p className="text-muted-foreground">Order in advance and skip the long lunch hour queues entirely.</p>
+              </div>
+              <div className="bg-card p-8 rounded-3xl text-center space-y-4 shadow-sm border border-border/50">
+                <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <ShieldCheck className="h-8 w-8 text-accent" />
+                </div>
+                <h3 className="text-xl font-headline font-bold">Secure Payments</h3>
+                <p className="text-muted-foreground">Convenient cashless options with GCash, PayMaya, or cash on pickup.</p>
+              </div>
+              <div className="bg-card p-8 rounded-3xl text-center space-y-4 shadow-sm border border-border/50">
+                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <Utensils className="h-8 w-8 text-primary" />
+                </div>
+                <h3 className="text-xl font-headline font-bold">Local Variety</h3>
+                <p className="text-muted-foreground">Explore menus from Cafeteria to SouthPoint favorites in one place.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="bg-accent text-accent-foreground py-16">
+        <div className="container mx-auto px-4 grid md:grid-cols-4 gap-12">
+          <div className="space-y-6">
+            <h2 className="text-3xl font-headline font-bold text-primary">Grubbie</h2>
+            <p className="opacity-70">Empowering student dining through technology and convenience.</p>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-bold text-lg">Quick Links</h4>
+            <ul className="space-y-2 opacity-70">
+              <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>
+              <li><Link href="/orders" className="hover:text-primary">Track Order</Link></li>
+              <li><Link href="/about" className="hover:text-primary">About Us</Link></li>
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-bold text-lg">For Partners</h4>
+            <ul className="space-y-2 opacity-70">
+              <li><Link href="/vendor/login" className="hover:text-primary">Vendor Login</Link></li>
+              <li><Link href="/vendor/register" className="hover:text-primary">Register Kitchen</Link></li>
+              <li><Link href="/policies" className="hover:text-primary">Vendor Policies</Link></li>
+            </ul>
+          </div>
+          <div className="space-y-4">
+            <h4 className="font-bold text-lg">Newsletter</h4>
+            <p className="text-sm opacity-70">Stay updated on new food arrivals.</p>
+            <div className="flex gap-2">
+              <input type="email" placeholder="Email" className="bg-white/10 border-none rounded-lg px-4 py-2 w-full outline-none" />
+              <Button variant="default">Go</Button>
+            </div>
+          </div>
+        </div>
+        <div className="container mx-auto px-4 mt-16 pt-8 border-t border-white/10 text-center opacity-50 text-sm">
+          © 2024 Grubbie. All rights reserved.
+        </div>
+      </footer>
+    </div>
+  );
 }
+
+import { Badge } from '@/components/ui/badge';
