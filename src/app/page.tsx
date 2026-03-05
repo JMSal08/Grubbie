@@ -19,7 +19,7 @@ export default function Home() {
           <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-4xl mx-auto space-y-8">
               <h1 className="text-5xl md:text-8xl font-headline font-extrabold text-accent leading-tight">
-                Get your Grub in no time, with <span className="text-primary">Grubbie.</span>
+                Get your <span className="text-primary">Grub</span> in no time, with <span className="text-primary">Grubbie.</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Fresh, hot meals from your favorite campus cafeterias and local spots, ready whenever you are.
