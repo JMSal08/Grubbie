@@ -16,34 +16,25 @@ export default function Home() {
       
       <main className="flex-1">
         {/* Hero Section */}
-        <section className="relative h-[80vh] flex items-center bg-[#DBAF70]/10 overflow-hidden">
-          <div className="container mx-auto px-4 relative z-10 grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
+        <section className="relative h-[80vh] flex items-center bg-[#DBAF70]/10 overflow-hidden text-center">
+          <div className="container mx-auto px-4 relative z-10">
+            <div className="max-w-4xl mx-auto space-y-8">
               <Badge className="bg-primary/20 text-accent border-none px-4 py-1">Best Choice for Students</Badge>
-              <h1 className="text-5xl md:text-7xl font-headline font-extrabold text-accent leading-tight">
+              <h1 className="text-5xl md:text-8xl font-headline font-extrabold text-accent leading-tight">
                 Skip the lines. <br />
                 <span className="text-primary">Pre-order</span> your favorites.
               </h1>
-              <p className="text-lg text-muted-foreground max-w-lg">
+              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
                 Fresh, hot meals from your favorite campus cafeterias and local spots, ready whenever you are.
               </p>
-              <div className="flex flex-wrap gap-4">
-                <Button size="lg" className="rounded-full px-8 h-14 text-lg font-bold" asChild>
+              <div className="flex flex-wrap justify-center gap-4">
+                <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
                   <Link href="/menu">Browse Menu</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full px-8 h-14 text-lg font-bold border-accent text-accent hover:bg-accent hover:text-white">
+                <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-xl font-bold border-accent text-accent hover:bg-accent hover:text-white">
                   Join as Vendor
                 </Button>
               </div>
-            </div>
-            <div className="relative hidden md:block h-[500px]">
-              <div className="absolute inset-0 bg-primary/20 rounded-[40px] rotate-6 transform" />
-              <img 
-                src="https://picsum.photos/seed/grubbie1/800/800" 
-                alt="Delicious meal" 
-                className="relative z-10 w-full h-full object-cover rounded-[40px] shadow-2xl"
-                data-ai-hint="delicious food"
-              />
             </div>
           </div>
         </section>
