@@ -205,7 +205,6 @@ export default function VendorSetupPage() {
                     required 
                     value={vendorDetails.openingTime} 
                     onChange={handleVendorChange} 
-                    onClick={(e) => (e.target as any).showPicker?.()}
                     className="rounded-xl h-12 bg-white cursor-pointer" 
                   />
                 </div>
@@ -220,7 +219,6 @@ export default function VendorSetupPage() {
                     required 
                     value={vendorDetails.closingTime} 
                     onChange={handleVendorChange} 
-                    onClick={(e) => (e.target as any).showPicker?.()}
                     className="rounded-xl h-12 bg-white cursor-pointer" 
                   />
                 </div>
