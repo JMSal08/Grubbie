@@ -27,6 +27,7 @@ import { doc, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 export default function VendorDashboard() {
   const { user, isUserLoading } = useUser();
@@ -96,8 +97,10 @@ export default function VendorDashboard() {
               <Button className="rounded-full gap-2 flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" /> Add Item
               </Button>
-              <Button variant="outline" className="rounded-full gap-2 border-accent text-accent flex-1 sm:flex-none">
-                <Settings className="h-4 w-4" /> Settings
+              <Button variant="outline" className="rounded-full gap-2 border-accent text-accent flex-1 sm:flex-none" asChild>
+                <Link href="/profile">
+                  <Settings className="h-4 w-4" /> Settings
+                </Link>
               </Button>
             </div>
           </div>
