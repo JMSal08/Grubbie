@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -44,7 +45,7 @@ export default function ProfilePage() {
   useEffect(() => {
     if (profileData) {
       setFormData(profileData);
-      const type = ['Cafeteria', 'Southpoint'].includes(profileData.location) ? profileData.location : 'Other';
+      const type = ['Cafeteria', 'SouthPoint'].includes(profileData.location) ? profileData.location : 'Other';
       setLocationType(type);
     }
   }, [profileData]);
@@ -185,7 +186,7 @@ export default function ProfilePage() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Cafeteria">Cafeteria</SelectItem>
-                                <SelectItem value="Southpoint">Southpoint</SelectItem>
+                                <SelectItem value="SouthPoint">SouthPoint</SelectItem>
                                 <SelectItem value="Other">Other</SelectItem>
                               </SelectContent>
                             </Select>

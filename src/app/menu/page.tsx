@@ -1,23 +1,52 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { VendorCard } from '@/components/vendor/VendorCard';
-import { MOCK_VENDORS } from '@/lib/mock-data';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, SlidersHorizontal } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collectionGroup, query } from 'firebase/firestore';
+import { Vendor } from '@/lib/types';
 
 export default function MenuPage() {
   const [cartCount, setCartCount] = useState(0);
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('Cafeteria');
+  const db = useFirestore();
 
-  const filteredVendors = MOCK_VENDORS.filter(vendor => 
-    vendor.name.toLowerCase().includes(search.toLowerCase()) || 
-    vendor.description.toLowerCase().includes(search.toLowerCase())
-  );
+  // Fetch all vendor profiles across all users using a Collection Group query
+  const vendorsQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collectionGroup(db, 'vendorProfile'));
+  }, [db]);
+
+  const { data: vendorsData, isLoading: vendorsLoading } = useCollection(vendorsQuery);
+
+  // Map Firestore documents to our Vendor type
+  const vendors = useMemo(() => {
+    if (!vendorsData) return [];
+    return vendorsData.map(doc => ({
+      id: doc.userId,
+      name: doc.vendorName,
+      description: doc.description,
+      imageUrl: doc.logoUrl || `https://picsum.photos/seed/${doc.userId}/600/400`,
+      category: (doc.location === 'Southpoint' ? 'SouthPoint' : doc.location) as any,
+      rating: 0, // In a real app, we'd aggregate reviews
+      reviewsCount: 0,
+      location: doc.location,
+    })) as Vendor[];
+  }, [vendorsData]);
+
+  const filteredVendors = useMemo(() => {
+    return vendors.filter(vendor => 
+      vendor.name.toLowerCase().includes(search.toLowerCase()) || 
+      vendor.description.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [vendors, search]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -51,54 +80,61 @@ export default function MenuPage() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        <Tabs defaultValue="Cafeteria" className="w-full" onValueChange={setActiveTab}>
-          <div className="flex justify-center mb-12">
-            <TabsList className="h-14 p-1 rounded-full bg-secondary/50 border border-muted">
-              <TabsTrigger value="Cafeteria" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cafeteria</TabsTrigger>
-              <TabsTrigger value="SouthPoint" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">SouthPoint</TabsTrigger>
-              <TabsTrigger value="Other" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Others</TabsTrigger>
-            </TabsList>
+        {vendorsLoading ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Finding active kitchens...</p>
           </div>
-
-          <TabsContent value="Cafeteria" className="mt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredVendors.filter(v => v.category === 'Cafeteria').map((vendor) => (
-                <VendorCard key={vendor.id} vendor={vendor} />
-              ))}
-              {filteredVendors.filter(v => v.category === 'Cafeteria').length === 0 && (
-                <div className="col-span-full py-20 text-center">
-                  <p className="text-muted-foreground">No restaurants found in Cafeteria.</p>
-                </div>
-              )}
+        ) : (
+          <Tabs defaultValue="Cafeteria" className="w-full" onValueChange={setActiveTab}>
+            <div className="flex justify-center mb-12">
+              <TabsList className="h-14 p-1 rounded-full bg-secondary/50 border border-muted">
+                <TabsTrigger value="Cafeteria" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cafeteria</TabsTrigger>
+                <TabsTrigger value="SouthPoint" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">SouthPoint</TabsTrigger>
+                <TabsTrigger value="Other" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Others</TabsTrigger>
+              </TabsList>
             </div>
-          </TabsContent>
 
-          <TabsContent value="SouthPoint" className="mt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredVendors.filter(v => v.category === 'SouthPoint').map((vendor) => (
-                <VendorCard key={vendor.id} vendor={vendor} />
-              ))}
-              {filteredVendors.filter(v => v.category === 'SouthPoint').length === 0 && (
-                <div className="col-span-full py-20 text-center">
-                  <p className="text-muted-foreground">No restaurants found in SouthPoint.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+            <TabsContent value="Cafeteria" className="mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredVendors.filter(v => v.category === 'Cafeteria').map((vendor) => (
+                  <VendorCard key={vendor.id} vendor={vendor} />
+                ))}
+                {filteredVendors.filter(v => v.category === 'Cafeteria').length === 0 && (
+                  <div className="col-span-full py-20 text-center">
+                    <p className="text-muted-foreground">No restaurants found in Cafeteria.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
 
-          <TabsContent value="Other" className="mt-0">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredVendors.filter(v => v.category === 'Other').map((vendor) => (
-                <VendorCard key={vendor.id} vendor={vendor} />
-              ))}
-              {filteredVendors.filter(v => v.category === 'Other').length === 0 && (
-                <div className="col-span-full py-20 text-center">
-                  <p className="text-muted-foreground">No restaurants found in other locations.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="SouthPoint" className="mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredVendors.filter(v => v.category === 'SouthPoint').map((vendor) => (
+                  <VendorCard key={vendor.id} vendor={vendor} />
+                ))}
+                {filteredVendors.filter(v => v.category === 'SouthPoint').length === 0 && (
+                  <div className="col-span-full py-20 text-center">
+                    <p className="text-muted-foreground">No restaurants found in SouthPoint.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="Other" className="mt-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredVendors.filter(v => v.category === 'Other').map((vendor) => (
+                  <VendorCard key={vendor.id} vendor={vendor} />
+                ))}
+                {filteredVendors.filter(v => v.category === 'Other').length === 0 && (
+                  <div className="col-span-full py-20 text-center">
+                    <p className="text-muted-foreground">No restaurants found in other locations.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        )}
       </main>
     </div>
   );

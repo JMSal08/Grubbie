@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -81,6 +82,7 @@ export default function VendorSetupPage() {
       const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
       setDocumentNonBlocking(vendorRef, {
         ...vendorDetails,
+        userId: user.uid,
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
@@ -175,7 +177,7 @@ export default function VendorSetupPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Cafeteria">Cafeteria</SelectItem>
-                        <SelectItem value="Southpoint">Southpoint</SelectItem>
+                        <SelectItem value="SouthPoint">SouthPoint</SelectItem>
                         <SelectItem value="Other">Other</SelectItem>
                       </SelectContent>
                     </Select>
