@@ -13,14 +13,27 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail } from 'lucide-react';
+import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail, AlertTriangle } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+
+  // Deletion state
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Get base user data to know the userType
   const userRef = useMemoFirebase(() => {
@@ -83,6 +96,18 @@ export default function ProfilePage() {
     }, 500);
   };
 
+  const handleDeleteInitiated = () => {
+    if (deleteConfirmText.toLowerCase() === "delete") {
+      setIsDeleteDialogOpen(false);
+      toast({
+        title: "Deletion Link Sent",
+        description: "A secure verification link has been sent to your email. Please click it to finalize account deletion.",
+      });
+      // In a real implementation, this would trigger a backend process to send the email link to /auth/delete-confirm
+      setDeleteConfirmText("");
+    }
+  };
+
   if (isUserLoading || isUserDataLoading || isProfileLoading) {
     return (
       <div className="min-h-screen bg-secondary/10 flex items-center justify-center">
@@ -134,6 +159,57 @@ export default function ProfilePage() {
                 </span>
               </div>
             </div>
+
+            {/* Danger Zone */}
+            <Card className="border-none shadow-sm bg-red-50 border-red-100">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-red-600 text-sm font-bold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" /> Danger Zone
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <p className="text-xs text-red-700">
+                  Permanently remove your account and all associated data. This action is irreversible.
+                </p>
+                <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="destructive" 
+                      className="w-full rounded-full bg-red-600 hover:bg-red-700 font-bold shadow-sm"
+                    >
+                      Delete Account
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="rounded-3xl">
+                    <DialogHeader>
+                      <DialogTitle className="font-headline text-red-600">Are you absolutely sure?</DialogTitle>
+                      <DialogDescription>
+                        To initiate deletion, please type <span className="font-bold text-foreground">delete</span> in the field below. A verification email will be sent to your account.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4">
+                      <Input
+                        value={deleteConfirmText}
+                        onChange={(e) => setDeleteConfirmText(e.target.value)}
+                        placeholder="Type delete to confirm"
+                        className="rounded-xl h-12 border-red-200 focus:ring-red-500"
+                      />
+                    </div>
+                    <DialogFooter>
+                      <Button variant="ghost" onClick={() => setIsDeleteDialogOpen(false)} className="rounded-full">Cancel</Button>
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteInitiated}
+                        disabled={deleteConfirmText.toLowerCase() !== "delete"}
+                        className="rounded-full px-8 bg-red-600 font-bold"
+                      >
+                        Send Deletion Link
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Settings Form */}
