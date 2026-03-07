@@ -1,13 +1,14 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, serverTimestamp } from 'firebase/firestore';
@@ -21,21 +22,56 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
   const db = useFirestore();
+  const { user } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user && isLoading) {
+      // Create User document in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      setDocumentNonBlocking(userRef, {
+        id: user.uid,
+        email: user.email || email,
+        userType: userType,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        isBlocked: false,
+      }, { merge: true });
+
+      // Create Profile document based on type
+      if (userType === 'customer') {
+        const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
+        setDocumentNonBlocking(customerRef, {
+          id: 'profile',
+          userId: user.uid,
+          firstName: '',
+          lastName: '',
+          phoneNumber: '',
+          lastLoginAt: serverTimestamp(),
+        }, { merge: true });
+      } else if (userType === 'vendor') {
+        const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
+        setDocumentNonBlocking(vendorRef, {
+          id: 'profile',
+          userId: user.uid,
+          vendorName: 'New Vendor',
+          description: '',
+          location: '',
+          contactNumber: '',
+          openingTime: '08:00',
+          closingTime: '20:00',
+          lastLoginAt: serverTimestamp(),
+        }, { merge: true });
+      }
+
+      router.push('/');
+    }
+  }, [user, isLoading, db, userType, router, email]);
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-    // In a real app, we'd handle the auth state change in a listener
-    // For this prototype, we'll simulate the process
     initiateEmailSignUp(auth, email, password);
-    
-    // Since it's non-blocking, we'll redirect after a short delay
-    // In production, you'd use the onAuthStateChanged listener to handle this
-    setTimeout(() => {
-      router.push('/');
-    }, 1500);
   };
 
   return (

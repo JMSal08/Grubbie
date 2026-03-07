@@ -1,12 +1,13 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -16,17 +17,19 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
+  const { user } = useUser();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user && isLoading) {
+      router.push('/');
+    }
+  }, [user, isLoading, router]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     initiateEmailSignIn(auth, email, password);
-    
-    setTimeout(() => {
-      router.push('/');
-    }, 1500);
   };
 
   return (
