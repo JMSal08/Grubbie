@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -34,25 +35,24 @@ export default function DeleteConfirmPage() {
       setIsDeleting(true);
       try {
         // 1. Re-authenticate user before deletion for security
-        // This is required by Firebase for sensitive operations like account deletion
         const credential = EmailAuthProvider.credential(user.email, password);
         await reauthenticateWithCredential(user, credential);
         
-        // 2. Firestore Cleanup (Synchronous/Awaited)
-        // We await these specifically during deletion to ensure they complete 
-        // while the user's Auth token is still valid.
+        // 2. Firestore Cleanup (Awaited)
+        // We MUST complete Firestore cleanup BEFORE deleting the Auth user
+        // so that the operations are authorized by the user's current token.
         const userRef = doc(db, 'users', user.uid);
         const customerProfileRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
         const vendorProfileRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
 
-        // Mark user document as deleted first
+        // Mark user document as deleted and blocked
         await setDoc(userRef, {
           deletedAt: serverTimestamp(),
           isBlocked: true,
           updatedAt: serverTimestamp(),
         }, { merge: true });
 
-        // Clean up profile subcollections immediately
+        // Hard delete the profile subcollection documents to ensure they are removed from collectionGroup queries
         await deleteDoc(customerProfileRef);
         await deleteDoc(vendorProfileRef);
         
@@ -62,7 +62,7 @@ export default function DeleteConfirmPage() {
         
         toast({
           title: "Account Permanently Deleted",
-          description: "We're sorry to see you go. Your account has been removed.",
+          description: "We're sorry to see you go. Your account and profile have been removed.",
         });
         router.push('/');
       } catch (error: any) {
@@ -114,7 +114,7 @@ export default function DeleteConfirmPage() {
             <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 items-start">
               <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               <p className="text-xs text-red-800 leading-relaxed">
-                This action is final. Deleting your account will immediately remove your profile from the discovery menu and remove all your data.
+                This action is final. Deleting your account will immediately remove your profile from the dining spots list and erase your data.
               </p>
             </div>
             <div className="space-y-3">

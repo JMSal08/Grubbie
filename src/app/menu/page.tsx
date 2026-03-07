@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -24,7 +25,6 @@ export default function MenuPage() {
   }, [db]);
 
   // Fetch user accounts that are vendors to verify their current status
-  // We fetch them all to ensure we have a complete list for filtering
   const usersQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'users'), where('userType', '==', 'vendor'));
@@ -43,24 +43,28 @@ export default function MenuPage() {
         const userAccount = usersData.find(u => u.id === profile.userId);
         
         // CRITICAL FILTERING LOGIC:
-        // 1. User account must exist in the users collection
-        // 2. User must not be blocked
-        // 3. User must NOT have a deletedAt timestamp
-        const isActive = userAccount && 
-                        userAccount.isBlocked === false && 
-                        !userAccount.deletedAt;
+        // A vendor profile is ONLY active if:
+        // 1. A matching user account exists in the top-level users collection
+        // 2. The user account is NOT blocked
+        // 3. The user account does NOT have a deletedAt timestamp
+        // 4. The vendor name is not "New Vendor" (this indicates incomplete setup)
         
-        return isActive;
+        if (!userAccount) return false;
+        if (userAccount.isBlocked === true) return false;
+        if (userAccount.deletedAt) return false;
+        if (!profile.vendorName || profile.vendorName === 'New Vendor') return false;
+        
+        return true;
       })
       .map(doc => ({
         id: doc.userId,
         name: doc.vendorName,
-        description: doc.description,
+        description: doc.description || '',
         imageUrl: doc.logoUrl || `https://picsum.photos/seed/${doc.userId}/600/400`,
         category: (doc.location === 'SouthPoint' ? 'SouthPoint' : doc.location) as any,
         rating: 0,
         reviewsCount: 0,
-        location: doc.location,
+        location: doc.location || 'Unknown',
       })) as Vendor[];
   }, [profilesData, usersData]);
 
