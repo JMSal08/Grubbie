@@ -12,7 +12,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { MOCK_FOOD } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
@@ -22,16 +21,14 @@ export default function CartPage() {
   const { toast } = useToast();
   const router = useRouter();
   
-  // Static mock cart for demo
-  const [items, setItems] = useState([
-    { ...MOCK_FOOD[0], quantity: 2 },
-    { ...MOCK_FOOD[1], quantity: 1 },
-  ]);
+  // Initialize with empty cart
+  const [items, setItems] = useState<any[]>([]);
 
   const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const total = subtotal;
 
   const handleCheckout = () => {
+    if (items.length === 0) return;
     toast({
       title: "Order Placed!",
       description: `Your pre-order has been sent to ${items[0].vendorName}.`,
@@ -78,8 +75,10 @@ export default function CartPage() {
             
             {items.length === 0 && (
               <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
-                <p className="text-muted-foreground">Your cart is empty.</p>
-                <Button variant="link" asChild><a href="/menu">Browse Menu</a></Button>
+                <p className="text-muted-foreground mb-4">Your cart is empty.</p>
+                <Button variant="default" asChild className="rounded-full px-8">
+                  <a href="/menu">Browse Menu</a>
+                </Button>
               </div>
             )}
           </div>
