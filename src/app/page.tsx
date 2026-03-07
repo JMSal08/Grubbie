@@ -81,7 +81,7 @@ export default function Home() {
             <h4 className="font-bold text-lg">Quick Links</h4>
             <ul className="space-y-2 opacity-70">
               <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>
-              {user && <li><Link href="/orders" className="hover:text-primary">Track Order</Link></li>}
+              <li><Link href={user ? "/orders" : "/auth/login"} className="hover:text-primary">Track Order</Link></li>
               <li><Link href="/about" className="hover:text-primary">About Us</Link></li>
             </ul>
           </div>

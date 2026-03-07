@@ -1,13 +1,27 @@
+
 "use client";
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MOCK_ORDERS } from '@/lib/mock-data';
 import { Progress } from '@/components/ui/progress';
 import { Clock, CheckCircle2, Package, ChefHat } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { useUser } from '@/firebase';
 
 export default function OrdersPage() {
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, isUserLoading, router]);
+
   const statusStep = (status: string) => {
     switch(status) {
       case 'pending': return 25;
@@ -17,6 +31,19 @@ export default function OrdersPage() {
       default: return 0;
     }
   };
+
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen bg-secondary/20">
+        <Navbar />
+        <main className="container mx-auto px-4 py-12 text-center">
+          <p>Loading your orders...</p>
+        </main>
+      </div>
+    );
+  }
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-secondary/20">
@@ -89,5 +116,3 @@ export default function OrdersPage() {
     </div>
   );
 }
-
-import { cn } from '@/lib/utils';

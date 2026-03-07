@@ -48,9 +48,12 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <Link href="/menu" className="text-sm font-medium hover:text-primary transition-colors">Menu</Link>
-            {user && (
-              <Link href="/orders" className="text-sm font-medium hover:text-primary transition-colors">My Orders</Link>
-            )}
+            <Link 
+              href={user ? "/orders" : "/auth/login"} 
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              My Orders
+            </Link>
           </div>
         </div>
 
