@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -11,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useUser, useAuth } from '@/firebase';
 import { deleteUser, signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Trash2, Loader2, ArrowLeft, MailOpen } from 'lucide-react';
+import { AlertCircle, Trash2, Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DeleteConfirmPage() {
@@ -73,12 +72,12 @@ export default function DeleteConfirmPage() {
           <div className="bg-red-600 h-2 w-full" />
           <CardHeader className="text-center space-y-4 pt-8">
             <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
-              <MailOpen className="h-10 w-10" />
+              <ShieldAlert className="h-10 w-10" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-headline font-bold text-red-600">Final Confirmation</CardTitle>
+              <CardTitle className="text-3xl font-headline font-bold text-red-600">Final Verification</CardTitle>
               <CardDescription className="text-foreground/70 font-medium">
-                You have clicked the secure link from your email. This is the final step to permanently delete your account.
+                Please confirm one last time. This is the final step to permanently remove your account from Grubbie.
               </CardDescription>
             </div>
           </CardHeader>

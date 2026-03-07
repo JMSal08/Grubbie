@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -100,13 +99,7 @@ export default function ProfilePage() {
     if (deleteConfirmText.toLowerCase() === "delete") {
       setIsDeleteDialogOpen(false);
       
-      // Notify about the email
-      toast({
-        title: "Deletion Flow Started",
-        description: "A secure link would be sent to your email. Redirecting to final verification page for this prototype.",
-      });
-
-      // Redirect to the final confirmation page (simulating clicking the email link)
+      // Redirect to the final confirmation page
       router.push('/auth/delete-confirm');
       
       setDeleteConfirmText("");
@@ -174,7 +167,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-xs text-red-700 font-medium">
-                  Permanently remove your account. This action is irreversible and requires email verification.
+                  Permanently remove your account. This action is irreversible.
                 </p>
                 <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                   <DialogTrigger asChild>
@@ -190,7 +183,7 @@ export default function ProfilePage() {
                     <DialogHeader>
                       <DialogTitle className="font-headline text-red-600">Start Deletion Process?</DialogTitle>
                       <DialogDescription>
-                        To receive a deletion link via email, please type <span className="font-bold text-foreground">delete</span> in the field below.
+                        Please type <span className="font-bold text-foreground">delete</span> in the field below to proceed to the final step.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
@@ -209,7 +202,7 @@ export default function ProfilePage() {
                         disabled={deleteConfirmText.toLowerCase() !== "delete"}
                         className="rounded-full px-8 bg-red-600 font-bold h-12"
                       >
-                        Send Deletion Link
+                        Continue to Final Step
                       </Button>
                     </DialogFooter>
                   </DialogContent>
