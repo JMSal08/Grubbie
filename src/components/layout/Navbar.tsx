@@ -23,11 +23,13 @@ import { Badge } from '@/components/ui/badge';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
   const { user } = useUser();
   const db = useFirestore();
   const auth = useAuth();
+  const { toast } = useToast();
 
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -43,7 +45,12 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
   const { data: adminData } = useDoc(adminDocRef);
 
   const handleLogout = () => {
-    signOut(auth);
+    signOut(auth).then(() => {
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out of your account.",
+      });
+    });
   };
 
   return (
