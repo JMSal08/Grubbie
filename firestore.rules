@@ -71,20 +71,19 @@ service cloud.firestore {
         allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
         allow delete: if isAdmin();
       }
+    }
 
-      /**
-       * @description Subcollection for Vendor-specific profile data.
-       * @path /users/{userId}/vendorProfile/{profileId}
-       * @allow (get, list) for everyone (public browsing of vendors).
-       * @allow (write) if the user owns the parent User document.
-       * @principle Public profile visibility with owner-only modifications.
-       */
-      match /vendorProfile/{profileId} {
-        allow get, list: if true;
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
-        allow delete: if isAdmin();
-      }
+    /**
+     * @description Subcollection for Vendor-specific profile data.
+     * Supports collection group queries for public browsing of vendors.
+     * @path /{path=**}/vendorProfile/{profileId}
+     * @principle Public profile visibility with owner-only modifications, supporting cross-user listing.
+     */
+    match /{path=**}/vendorProfile/{profileId} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
     }
 
     /**
