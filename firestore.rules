@@ -39,7 +39,8 @@ service cloud.firestore {
     match /users/{userId} {
       // Allow reading other users if the requester is signed in 
       // OR if the document belongs to a vendor (needed for public menu discovery).
-      allow get, list: if isSignedIn() || (resource != null && resource.data.userType == 'vendor');
+      // We allow list operations for anyone as long as they are querying for vendors.
+      allow get, list: if isSignedIn() || (resource.data.userType == 'vendor');
       
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId) || isAdmin();
@@ -104,7 +105,9 @@ service cloud.firestore {
      * @description Customer pre-orders.
      */
     match /orders/{orderId} {
-      allow get, list: if isInvolvedInOrder(resource.data) || isAdmin();
+      // Support list queries for customers and vendors separately to avoid engine logical complexity
+      allow get: if (resource != null && isInvolvedInOrder(resource.data)) || isAdmin();
+      allow list: if (isSignedIn() && (resource.data.customerId == request.auth.uid || resource.data.vendorId == request.auth.uid)) || isAdmin();
       allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
       allow update: if resource != null && (isInvolvedInOrder(resource.data) || isAdmin());
       allow delete: if isAdmin();
