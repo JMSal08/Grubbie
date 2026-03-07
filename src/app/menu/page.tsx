@@ -24,6 +24,7 @@ export default function MenuPage() {
   }, [db]);
 
   // Fetch user accounts that are vendors to verify their current status
+  // We fetch them all to ensure we have a complete list for filtering
   const usersQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collection(db, 'users'), where('userType', '==', 'vendor'));
@@ -38,10 +39,18 @@ export default function MenuPage() {
     
     return profilesData
       .filter(profile => {
-        // Find the corresponding user account
+        // Find the corresponding user account by the userId stored in the profile
         const userAccount = usersData.find(u => u.id === profile.userId);
-        // Only include if user account exists, is not blocked, and not marked as deleted
-        return userAccount && !userAccount.isBlocked && !userAccount.deletedAt;
+        
+        // CRITICAL FILTERING LOGIC:
+        // 1. User account must exist in the users collection
+        // 2. User must not be blocked
+        // 3. User must NOT have a deletedAt timestamp
+        const isActive = userAccount && 
+                        userAccount.isBlocked === false && 
+                        !userAccount.deletedAt;
+        
+        return isActive;
       })
       .map(doc => ({
         id: doc.userId,
@@ -118,7 +127,7 @@ export default function MenuPage() {
                 ))}
                 {filteredVendors.filter(v => v.category === 'Cafeteria').length === 0 && (
                   <div className="col-span-full py-20 text-center">
-                    <p className="text-muted-foreground">No restaurants found in Cafeteria.</p>
+                    <p className="text-muted-foreground">No active restaurants found in Cafeteria.</p>
                   </div>
                 )}
               </div>
@@ -131,7 +140,7 @@ export default function MenuPage() {
                 ))}
                 {filteredVendors.filter(v => v.category === 'SouthPoint').length === 0 && (
                   <div className="col-span-full py-20 text-center">
-                    <p className="text-muted-foreground">No restaurants found in SouthPoint.</p>
+                    <p className="text-muted-foreground">No active restaurants found in SouthPoint.</p>
                   </div>
                 )}
               </div>
@@ -144,7 +153,7 @@ export default function MenuPage() {
                 ))}
                 {filteredVendors.filter(v => v.category === 'Other').length === 0 && (
                   <div className="col-span-full py-20 text-center">
-                    <p className="text-muted-foreground">No restaurants found in other locations.</p>
+                    <p className="text-muted-foreground">No active restaurants found in other locations.</p>
                   </div>
                 )}
               </div>
