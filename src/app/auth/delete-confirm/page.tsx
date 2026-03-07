@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useUser, useAuth } from '@/firebase';
-import { deleteUser, signOut } from 'firebase/auth';
+import { deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Trash2, Loader2, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { AlertCircle, Trash2, Loader2, ArrowLeft, ShieldAlert, Lock } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DeleteConfirmPage() {
-  const [confirmText, setConfirmText] = useState("");
+  const [password, setPassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
@@ -28,10 +28,16 @@ export default function DeleteConfirmPage() {
   }, [user, isUserLoading, router]);
 
   const handleFinalDelete = async () => {
-    if (confirmText.toLowerCase() === "delete" && user) {
+    if (password && user && user.email) {
       setIsDeleting(true);
       try {
+        // Re-authenticate user before deletion for security
+        const credential = EmailAuthProvider.credential(user.email, password);
+        await reauthenticateWithCredential(user, credential);
+        
+        // After successful re-auth, proceed with deletion
         await deleteUser(user);
+        
         toast({
           title: "Account Permanently Deleted",
           description: "We're sorry to see you go. Your account has been removed.",
@@ -39,21 +45,22 @@ export default function DeleteConfirmPage() {
         router.push('/');
       } catch (error: any) {
         setIsDeleting(false);
-        if (error.code === 'auth/requires-recent-login') {
-          toast({
-            variant: "destructive",
-            title: "Security Verification Required",
-            description: "For your protection, please log out and log back in before deleting your account.",
-          });
-          signOut(auth);
-          router.push('/auth/login');
-        } else {
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: error.message || "Could not delete account. Please try again later.",
-          });
+        console.error("Deletion error:", error);
+        
+        let message = "Could not delete account. Please check your password and try again.";
+        if (error.code === 'auth/wrong-password') {
+          message = "Incorrect password. Please try again.";
+        } else if (error.code === 'auth/too-many-requests') {
+          message = "Too many failed attempts. Please try again later.";
+        } else if (error.code === 'auth/requires-recent-login') {
+          message = "Security timeout. Please log out and log back in before deleting your account.";
         }
+        
+        toast({
+          variant: "destructive",
+          title: "Verification Failed",
+          description: message,
+        });
       }
     }
   };
@@ -75,9 +82,9 @@ export default function DeleteConfirmPage() {
               <ShieldAlert className="h-10 w-10" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-headline font-bold text-red-600">Final Verification</CardTitle>
+              <CardTitle className="text-3xl font-headline font-bold text-red-600">Security Verification</CardTitle>
               <CardDescription className="text-foreground/70 font-medium">
-                Please confirm one last time. This is the final step to permanently remove your account from Grubbie.
+                Please enter your password to confirm you want to permanently delete your Grubbie account.
               </CardDescription>
             </div>
           </CardHeader>
@@ -85,15 +92,18 @@ export default function DeleteConfirmPage() {
             <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 items-start">
               <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               <p className="text-xs text-red-800 leading-relaxed">
-                Deleting your account will immediately remove all your data, including order history, profile information, and vendor settings. This cannot be undone.
+                This action is final. Deleting your account will immediately remove all your data, including order history and profile information.
               </p>
             </div>
             <div className="space-y-3">
-              <Label className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Type "delete" to confirm</Label>
+              <Label className="font-bold text-sm uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                <Lock className="h-4 w-4" /> Account Password
+              </Label>
               <Input
-                value={confirmText}
-                onChange={(e) => setConfirmText(e.target.value)}
-                placeholder="Type delete to confirm"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
                 className="rounded-xl h-14 border-red-200 focus:ring-red-500 text-lg text-center font-bold"
               />
             </div>
@@ -102,7 +112,7 @@ export default function DeleteConfirmPage() {
             <Button 
               onClick={handleFinalDelete} 
               className="w-full h-14 rounded-full bg-red-600 hover:bg-red-700 font-bold text-lg shadow-lg gap-3"
-              disabled={confirmText.toLowerCase() !== "delete" || isDeleting}
+              disabled={!password || isDeleting}
             >
               {isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : <><Trash2 className="h-5 w-5" /> Delete My Account Forever</>}
             </Button>
