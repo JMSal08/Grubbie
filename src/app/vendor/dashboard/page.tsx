@@ -19,7 +19,8 @@ import {
   AlertTriangle,
   ChevronRight,
   Loader2,
-  Power
+  Power,
+  Edit
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
@@ -93,9 +94,12 @@ export default function VendorDashboard() {
               />
             </div>
             
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
               <Button className="rounded-full gap-2 flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" /> Add Item
+              </Button>
+              <Button variant="outline" className="rounded-full gap-2 border-primary text-primary flex-1 sm:flex-none">
+                <Edit className="h-4 w-4" /> Edit Page
               </Button>
               <Button variant="outline" className="rounded-full gap-2 border-accent text-accent flex-1 sm:flex-none" asChild>
                 <Link href="/profile">
