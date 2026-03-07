@@ -22,6 +22,7 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // If user is already logged in or becomes logged in after form submission
     if (user && !isLoading) {
       router.push('/');
     }
@@ -30,14 +31,19 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    initiateEmailSignIn(auth, email, password).catch((error: any) => {
-      setIsLoading(false);
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: error.message || "Invalid credentials provided.",
+    initiateEmailSignIn(auth, email, password)
+      .then(() => {
+        // Reset loading state so the useEffect can trigger the redirect
+        setIsLoading(false);
+      })
+      .catch((error: any) => {
+        setIsLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Login Failed",
+          description: error.message || "Invalid credentials provided.",
+        });
       });
-    });
   };
 
   return (
