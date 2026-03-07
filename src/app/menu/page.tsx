@@ -56,16 +56,23 @@ export default function MenuPage() {
         
         return true;
       })
-      .map(doc => ({
-        id: doc.userId,
-        name: doc.vendorName,
-        description: doc.description || '',
-        imageUrl: doc.logoUrl || `https://picsum.photos/seed/${doc.userId}/600/400`,
-        category: (doc.location === 'SouthPoint' ? 'SouthPoint' : doc.location) as any,
-        rating: 0,
-        reviewsCount: 0,
-        location: doc.location || 'Unknown',
-      })) as Vendor[];
+      .map(doc => {
+        // Determine category for UI grouping
+        // Any location that isn't explicitly 'Cafeteria' or 'SouthPoint' falls under 'Other'
+        const loc = doc.location || '';
+        const category = (loc === 'Cafeteria' || loc === 'SouthPoint') ? loc : 'Other';
+
+        return {
+          id: doc.userId,
+          name: doc.vendorName,
+          description: doc.description || '',
+          imageUrl: doc.logoUrl || `https://picsum.photos/seed/${doc.userId}/600/400`,
+          category: category as any,
+          rating: 0,
+          reviewsCount: 0,
+          location: loc || 'Unknown',
+        } as Vendor;
+      });
   }, [profilesData, usersData]);
 
   const filteredVendors = useMemo(() => {
