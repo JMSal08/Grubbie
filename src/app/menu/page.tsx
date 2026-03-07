@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { VendorCard } from '@/components/vendor/VendorCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
@@ -47,7 +47,7 @@ export default function MenuPage() {
         // 1. A matching user account exists in the top-level users collection
         // 2. The user account is NOT blocked
         // 3. The user account does NOT have a deletedAt timestamp
-        // 4. The vendor name is not "New Vendor" (this indicates incomplete setup)
+        // 4. The vendor name is not "New Vendor" (this indicates incomplete setup or stale data)
         
         if (!userAccount) return false;
         if (userAccount.isBlocked === true) return false;
@@ -100,9 +100,6 @@ export default function MenuPage() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" className="h-12 w-12 rounded-full">
-                <SlidersHorizontal className="h-5 w-5" />
-              </Button>
             </div>
           </div>
         </div>
