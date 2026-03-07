@@ -205,7 +205,7 @@ export default function VendorSetupPage() {
                     required 
                     value={vendorDetails.openingTime} 
                     onChange={handleVendorChange} 
-                    className="rounded-xl h-12 bg-white cursor-pointer" 
+                    className="rounded-xl h-12 bg-white cursor-pointer input-picker-full" 
                   />
                 </div>
                 <div className="space-y-2">
@@ -219,7 +219,7 @@ export default function VendorSetupPage() {
                     required 
                     value={vendorDetails.closingTime} 
                     onChange={handleVendorChange} 
-                    className="rounded-xl h-12 bg-white cursor-pointer" 
+                    className="rounded-xl h-12 bg-white cursor-pointer input-picker-full" 
                   />
                 </div>
               </div>
