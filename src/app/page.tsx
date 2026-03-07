@@ -22,7 +22,7 @@ export default function Home() {
                 Get your <span className="text-primary">Grub</span> in no time, with <span className="text-primary">Grubbie.</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Fresh, hot meals from your favorite campus cafeterias and local spots, ready whenever you are.
+                Order now, with Grubbie.
               </p>
               <div className="flex flex-wrap justify-center gap-4">
                 <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>

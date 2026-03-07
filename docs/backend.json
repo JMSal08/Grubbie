@@ -1,0 +1,662 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a base user account in the Grubbie application, used for authentication and linking to specific user profiles (Customer or Vendor).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the user, used for login.",
+          "format": "email"
+        },
+        "userType": {
+          "type": "string",
+          "description": "The type of user (e.g., customer, vendor, admin).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the user account was last updated.",
+          "format": "date-time"
+        },
+        "isBlocked": {
+          "type": "boolean",
+          "description": "Indicates if the user account is currently blocked by an administrator."
+        },
+        "deletedAt": {
+          "type": "string",
+          "description": "Timestamp if the user account has been soft-deleted, null otherwise. (Voluntary Account Deletion feature).",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "email",
+        "userType",
+        "createdAt",
+        "updatedAt",
+        "isBlocked"
+      ]
+    },
+    "CustomerProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CustomerProfile",
+      "type": "object",
+      "description": "Contains specific profile information for a customer user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CustomerProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the associated User account. (Relationship: User 1:1 CustomerProfile)"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The first name of the customer."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The last name of the customer."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The contact phone number of the customer."
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Timestamp of the customer's last login.",
+          "format": "date-time"
+        },
+        "profileImageUrl": {
+          "type": "string",
+          "description": "URL to the customer's profile image (optional).",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "firstName",
+        "lastName",
+        "phoneNumber",
+        "lastLoginAt"
+      ]
+    },
+    "VendorProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "VendorProfile",
+      "type": "object",
+      "description": "Contains specific profile information for a vendor user, including details about their food stall or establishment.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the VendorProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the associated User account. (Relationship: User 1:1 VendorProfile)"
+        },
+        "vendorName": {
+          "type": "string",
+          "description": "The name of the vendor's establishment or stall."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the vendor or their offerings."
+        },
+        "location": {
+          "type": "string",
+          "description": "The physical location of the vendor (e.g., 'Cafeteria A', 'SouthPoint Stall 5')."
+        },
+        "contactNumber": {
+          "type": "string",
+          "description": "The contact phone number for the vendor."
+        },
+        "openingTime": {
+          "type": "string",
+          "description": "The daily opening time for the vendor in HH:MM format."
+        },
+        "closingTime": {
+          "type": "string",
+          "description": "The daily closing time for the vendor in HH:MM format."
+        },
+        "lastLoginAt": {
+          "type": "string",
+          "description": "Timestamp of the vendor's last login.",
+          "format": "date-time"
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL to the vendor's logo image (optional).",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "vendorName",
+        "description",
+        "location",
+        "contactNumber",
+        "openingTime",
+        "closingTime",
+        "lastLoginAt"
+      ]
+    },
+    "MenuType": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MenuType",
+      "type": "object",
+      "description": "Defines categories for food items, such as 'Cafeteria' or 'SouthPoint'.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MenuType entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the menu type (e.g., 'Cafeteria', 'SouthPoint')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A short description of the menu type."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description"
+      ]
+    },
+    "MenuItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "MenuItem",
+      "type": "object",
+      "description": "Represents a single food item offered by a vendor, available for customer browsing and ordering.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the MenuItem entity."
+        },
+        "vendorId": {
+          "type": "string",
+          "description": "Reference to the VendorProfile who offers this menu item. (Relationship: VendorProfile 1:N MenuItem)"
+        },
+        "menuTypeId": {
+          "type": "string",
+          "description": "Reference to the MenuType this item belongs to (e.g., 'Cafeteria'). (Relationship: MenuType 1:N MenuItem)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the food item."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the food item, including ingredients or preparation."
+        },
+        "price": {
+          "type": "number",
+          "description": "The current price of the food item."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image of the food item.",
+          "format": "uri"
+        },
+        "isAvailable": {
+          "type": "boolean",
+          "description": "Indicates if the food item is currently available for order."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the menu item was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the menu item was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "vendorId",
+        "menuTypeId",
+        "name",
+        "description",
+        "price",
+        "imageUrl",
+        "isAvailable",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer's pre-order placed with a vendor, including payment and scheduling details.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Order entity."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to the CustomerProfile who placed the order. (Relationship: CustomerProfile 1:N Order)"
+        },
+        "vendorId": {
+          "type": "string",
+          "description": "Reference to the VendorProfile from whom the order was placed. (Relationship: VendorProfile 1:N Order)"
+        },
+        "orderDateTime": {
+          "type": "string",
+          "description": "Timestamp when the order was placed.",
+          "format": "date-time"
+        },
+        "scheduledPickupDateTime": {
+          "type": "string",
+          "description": "The date and time the customer scheduled to pick up the order, if applicable. (In-advance Order Scheduling).",
+          "format": "date-time"
+        },
+        "totalAmount": {
+          "type": "number",
+          "description": "The total monetary amount of the order."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The chosen payment method for the order (e.g., 'Cash-on-pickup', 'Gcash', 'Paymaya').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The current status of the payment for the order (e.g., 'Pending', 'Paid', 'Refunded').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "orderStatus": {
+          "type": "string",
+          "description": "The real-time status of the order as it progresses (e.g., 'Pending', 'Preparing', 'Ready for Pickup', 'Picked Up', 'Cancelled').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the order record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the order record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "customerId",
+        "vendorId",
+        "orderDateTime",
+        "totalAmount",
+        "paymentMethod",
+        "paymentStatus",
+        "orderStatus",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents a specific food item included in an order, detailing its quantity and price at the time of order placement.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the OrderItem entity."
+        },
+        "orderId": {
+          "type": "string",
+          "description": "Reference to the Order this item belongs to. (Relationship: Order 1:N OrderItem)"
+        },
+        "menuItemId": {
+          "type": "string",
+          "description": "Reference to the MenuItem that was ordered. (Relationship: MenuItem 1:N OrderItem)"
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity of the menu item ordered."
+        },
+        "priceAtOrder": {
+          "type": "number",
+          "description": "The price of the item at the exact moment the order was placed."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Any special notes or requests for this specific item (e.g., 'no pickles')."
+        }
+      },
+      "required": [
+        "id",
+        "orderId",
+        "menuItemId",
+        "quantity",
+        "priceAtOrder"
+      ]
+    },
+    "Review": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Review",
+      "type": "object",
+      "description": "Allows customers to leave ratings and written reviews for food items or vendors.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Review entity."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to the CustomerProfile who submitted the review. (Relationship: CustomerProfile 1:N Review)"
+        },
+        "menuItemId": {
+          "type": "string",
+          "description": "Reference to the MenuItem being reviewed, if applicable. (Relationship: MenuItem 1:N Review)"
+        },
+        "vendorId": {
+          "type": "string",
+          "description": "Reference to the VendorProfile being reviewed, if applicable. (Relationship: VendorProfile 1:N Review)"
+        },
+        "rating": {
+          "type": "number",
+          "description": "The numerical rating given by the customer (e.g., 1-5 stars)."
+        },
+        "comment": {
+          "type": "string",
+          "description": "The written feedback or comment from the customer."
+        },
+        "reviewDateTime": {
+          "type": "string",
+          "description": "Timestamp when the review was submitted.",
+          "format": "date-time"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the review record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the review record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "customerId",
+        "rating",
+        "comment",
+        "reviewDateTime",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Report": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Report",
+      "type": "object",
+      "description": "Records reports made by vendors against customer behavior, subject to administrative review.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Report entity."
+        },
+        "reportingVendorId": {
+          "type": "string",
+          "description": "Reference to the VendorProfile who submitted the report. (Relationship: VendorProfile 1:N Report)"
+        },
+        "reportedCustomerId": {
+          "type": "string",
+          "description": "Reference to the CustomerProfile against whom the report was made. (Relationship: CustomerProfile 1:N Report)"
+        },
+        "reason": {
+          "type": "string",
+          "description": "A brief reason for the report (e.g., 'Unruly behavior', 'Late pickup')."
+        },
+        "details": {
+          "type": "string",
+          "description": "Detailed description of the incident being reported."
+        },
+        "reportDateTime": {
+          "type": "string",
+          "description": "Timestamp when the report was submitted.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the report (e.g., 'Pending Review', 'Under Investigation', 'Resolved - Action Taken', 'Resolved - No Action').",
+          "items": {
+            "type": "string"
+          }
+        },
+        "adminNotes": {
+          "type": "string",
+          "description": "Internal notes added by administrators during the review process (optional)."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp when the report record was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp when the report record was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "reportingVendorId",
+        "reportedCustomerId",
+        "reason",
+        "details",
+        "reportDateTime",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Top-level collection for all user accounts. Contains essential user details and authorization flags like `userType` and `isBlocked` for direct rule access.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the user, matching `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/customerProfile",
+        "definition": {
+          "entityName": "CustomerProfile",
+          "schema": {
+            "$ref": "#/backend/entities/CustomerProfile"
+          },
+          "description": "Subcollection containing the specific profile details for a customer. Its security is inherited from the parent `/users/{userId}` path.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the customer (user ID)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/vendorProfile",
+        "definition": {
+          "entityName": "VendorProfile",
+          "schema": {
+            "$ref": "#/backend/entities/VendorProfile"
+          },
+          "description": "Subcollection containing the specific profile details for a vendor. Its security is inherited from the parent `/users/{userId}` path.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the vendor (user ID)."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Dedicated top-level collection for administrative roles. An `exists()` check on this collection is used to grant admin privileges, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The unique identifier of a user who holds an administrator role, matching `request.auth.uid`."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/menuTypes/{menuTypeId}",
+        "definition": {
+          "entityName": "MenuType",
+          "schema": {
+            "$ref": "#/backend/entities/MenuType"
+          },
+          "description": "Top-level collection for defining global menu categories. Publicly readable, with write access restricted to administrators.",
+          "params": [
+            {
+              "name": "menuTypeId",
+              "description": "The unique identifier for a menu type."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/menuItems/{menuItemId}",
+        "definition": {
+          "entityName": "MenuItem",
+          "schema": {
+            "$ref": "#/backend/entities/MenuItem"
+          },
+          "description": "Top-level collection for all food items. Includes denormalized `vendorId` for authorization independence and `isAvailable` for public read access. Vendors can manage their own items.",
+          "params": [
+            {
+              "name": "menuItemId",
+              "description": "The unique identifier for a menu item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Top-level collection for all customer orders. Includes denormalized `customerId` and `vendorId` for authorization independence, allowing both customers and vendors to manage their respective orders without `get()` calls.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "The unique identifier for an order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/orders/{orderId}/orderItems/{orderItemId}",
+        "definition": {
+          "entityName": "OrderItem",
+          "schema": {
+            "$ref": "#/backend/entities/OrderItem"
+          },
+          "description": "Subcollection detailing items within a specific order. Access is secured via the parent `/orders/{orderId}` document.",
+          "params": [
+            {
+              "name": "orderId",
+              "description": "The unique identifier of the parent order."
+            },
+            {
+              "name": "orderItemId",
+              "description": "The unique identifier for an item within an order."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reviews/{reviewId}",
+        "definition": {
+          "entityName": "Review",
+          "schema": {
+            "$ref": "#/backend/entities/Review"
+          },
+          "description": "Top-level collection for customer reviews. Includes denormalized `customerId` for review ownership and `vendorId` for vendor-specific review access, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "reviewId",
+              "description": "The unique identifier for a review."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/reports/{reportId}",
+        "definition": {
+          "entityName": "Report",
+          "schema": {
+            "$ref": "#/backend/entities/Report"
+          },
+          "description": "Top-level collection for vendor-submitted reports. Includes denormalized `reportingVendorId` for vendor ownership, with read access primarily for administrators, ensuring authorization independence.",
+          "params": [
+            {
+              "name": "reportId",
+              "description": "The unique identifier for a report."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure is designed to be secure, scalable, and debuggable, adhering strictly to the core design principles and strategy mandates. \n\n**Authorization Independence via Denormalization and Structural Segregation:**\n\n1.  **Users and Profiles (`/users/{userId}`, `/users/{userId}/customerProfile`, `/users/{userId}/vendorProfile`):** User data, including their `userType` and `isBlocked` status, is stored directly at `/users/{userId}`. This makes authorization checks based on the user's own properties (`request.auth.uid`) atomic and independent, eliminating the need for `get()` calls to determine a user's basic role or status. Customer and Vendor profiles are stored as subcollections (`/users/{userId}/customerProfile` and `/users/{userId}/vendorProfile`), establishing clear, path-based ownership. This structural hierarchy means a customer's profile is inherently secured by their user ID, and access can be granted if `request.auth.uid == userId`.\n\n2.  **Global Roles (`/roles_admin/{adminId}`):** To ensure maximum authorization independence for administrative privileges, a dedicated top-level collection `roles_admin` is used. An admin's presence in this collection signifies their role, allowing security rules to use an efficient `exists()` check instead of a `get()` to a `User` document, which fully satisfies the Authorization Independence mandate by removing hierarchical dependencies for global roles.\n\n3.  **Menu Items (`/menuItems/{menuItemId}`):** Each `MenuItem` document denormalizes the `vendorId` of its owning vendor. This is crucial for Authorization Independence as it allows vendors to manage their menu items directly by checking `request.auth.uid == resource.data.vendorId` without needing to `get()` the parent `VendorProfile` document. This also enables QAPs (Queryable Access Patterns) for vendors to list their own items (`where('vendorId', '==', request.auth.uid)`) and for customers to browse available items publicly (`where('isAvailable', '==', true)`).\n\n4.  **Orders (`/orders/{orderId}`):** Each `Order` document denormalizes both the `customerId` and the `vendorId`. This is paramount for Authorization Independence, enabling both customers to view their placed orders (`request.auth.uid == resource.data.customerId`) and vendors to manage orders placed with them (`request.auth.uid == resource.data.vendorId`) without any `get()` calls. This also ensures robust QAPs, allowing customers to query `where('customerId', '==', request.auth.uid)` and vendors to query `where('vendorId', '==', request.auth.uid)` for their respective order lists.\n\n5.  **Order Items (`/orders/{orderId}/orderItems/{orderItemId}`):** As a subcollection, `OrderItem`s inherit authorization from their parent `Order`. Access to `OrderItem`s is implicitly granted once access to the parent `Order` is verified, avoiding redundant denormalization while maintaining a clear and logical hierarchy.\n\n6.  **Reviews (`/reviews/{reviewId}`):** Each `Review` document denormalizes both the `customerId` (the reviewer) and the `vendorId` (the vendor being reviewed). This ensures Authorization Independence: customers can manage their own reviews by checking `request.auth.uid == resource.data.customerId`, and vendors can retrieve reviews specific to their business by checking `request.auth.uid == resource.data.vendorId`. This enables QAPs for both customer-specific review lists and vendor-specific review lists, as well as public browsing.\n\n7.  **Reports (`/reports/{reportId}`):** Each `Report` document denormalizes the `reportingVendorId`. This allows vendors to create and potentially view reports they've submitted by checking `request.auth.uid == resource.data.reportingVendorId`. Admin access is managed via the `/roles_admin/{adminId}` collection. This structure supports QAPs for vendors to list their submitted reports and for administrators to list all reports.\n\n**Clarity of Intent and QAPs:**\n\n*   **Clear Ownership:** Path-based ownership (`/users/{userId}/...`) and explicit `ownerId`/`customerId`/`vendorId` fields on top-level collections make authorization intent immediately clear.\n*   **Consistent Naming:** Semantic naming conventions like `userId`, `vendorId`, `menuItemId` are used consistently.\n*   **Explicit State:** Fields like `orderStatus`, `paymentStatus`, and `status` in `Report` provide clear, explicit states for business logic and rule conditions.\n*   **QAP Support:** By denormalizing `vendorId`, `customerId`, and `reportingVendorId` into relevant top-level collections (`/menuItems`, `/orders`, `/reviews`, `/reports`), the structure explicitly supports efficient `list` operations for all user types (`customer`, `vendor`, `admin`) without relying on expensive and insecure rule filters. Each document contains all necessary information for authorization and querying for its specific context.\n\nThis architecture minimizes rule complexity, enhances security by design, and ensures atomic operations by avoiding cross-document `get()` calls for authorization."
+  }
+}
