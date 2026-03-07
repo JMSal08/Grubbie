@@ -56,6 +56,7 @@ export default function MenuPage() {
             <TabsList className="h-14 p-1 rounded-full bg-secondary/50 border border-muted">
               <TabsTrigger value="Cafeteria" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Cafeteria</TabsTrigger>
               <TabsTrigger value="SouthPoint" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">SouthPoint</TabsTrigger>
+              <TabsTrigger value="Other" className="rounded-full px-8 font-bold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">Others</TabsTrigger>
             </TabsList>
           </div>
 
@@ -80,6 +81,19 @@ export default function MenuPage() {
               {filteredVendors.filter(v => v.category === 'SouthPoint').length === 0 && (
                 <div className="col-span-full py-20 text-center">
                   <p className="text-muted-foreground">No restaurants found in SouthPoint.</p>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="Other" className="mt-0">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredVendors.filter(v => v.category === 'Other').map((vendor) => (
+                <VendorCard key={vendor.id} vendor={vendor} />
+              ))}
+              {filteredVendors.filter(v => v.category === 'Other').length === 0 && (
+                <div className="col-span-full py-20 text-center">
+                  <p className="text-muted-foreground">No restaurants found in other locations.</p>
                 </div>
               )}
             </div>

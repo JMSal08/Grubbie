@@ -9,7 +9,7 @@ export interface User {
   avatar?: string;
 }
 
-export type FoodCategory = 'Cafeteria' | 'SouthPoint';
+export type FoodCategory = 'Cafeteria' | 'SouthPoint' | 'Other';
 
 export interface Vendor {
   id: string;

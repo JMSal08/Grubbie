@@ -46,6 +46,16 @@ export const MOCK_VENDORS: Vendor[] = [
     rating: 4.6,
     reviewsCount: 89,
     location: 'SouthPoint Entrance'
+  },
+  {
+    id: 'v5',
+    name: 'Main Gate Snacks',
+    description: 'Quick bites and street food favorites located near the university main entrance.',
+    imageUrl: 'https://picsum.photos/seed/snacks/600/400',
+    category: 'Other',
+    rating: 4.1,
+    reviewsCount: 42,
+    location: 'Main Gate'
   }
 ];
 

@@ -94,7 +94,7 @@ export default function VendorSetupPage() {
             name: item.name,
             description: item.description,
             price: parseFloat(item.price),
-            menuTypeId: item.category === 'Cafeteria' ? 'cafeteria' : 'southpoint',
+            menuTypeId: item.category.toLowerCase(),
             imageUrl: 'https://picsum.photos/seed/' + Math.floor(Math.random() * 1000) + '/600/400',
             isAvailable: true,
             createdAt: serverTimestamp(),
@@ -291,6 +291,7 @@ export default function VendorSetupPage() {
                         <SelectContent>
                           <SelectItem value="Cafeteria">Cafeteria</SelectItem>
                           <SelectItem value="SouthPoint">SouthPoint</SelectItem>
+                          <SelectItem value="Other">Others</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
