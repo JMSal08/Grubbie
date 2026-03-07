@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -14,6 +13,7 @@ import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -24,6 +24,7 @@ export default function SignupPage() {
   const db = useFirestore();
   const { user } = useUser();
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (user && isLoading) {
@@ -71,7 +72,14 @@ export default function SignupPage() {
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    initiateEmailSignUp(auth, email, password);
+    initiateEmailSignUp(auth, email, password).catch((error: any) => {
+      setIsLoading(false);
+      toast({
+        variant: "destructive",
+        title: "Sign Up Failed",
+        description: error.message || "Could not create account.",
+      });
+    });
   };
 
   return (
