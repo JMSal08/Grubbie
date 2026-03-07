@@ -50,8 +50,8 @@ export default function VendorSetupPage() {
   }, [user, isUserLoading, router]);
 
   const handleVendorChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setVendorDetails(prev => ({ ...prev, [id]: value }));
+    const { name, value } = e.target;
+    setVendorDetails(prev => ({ ...prev, [name]: value }));
   };
 
   const handleMenuItemChange = (index: number, field: keyof NewMenuItem, value: string) => {
@@ -146,21 +146,53 @@ export default function VendorSetupPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="vendorName">Store Name</Label>
-                  <Input id="vendorName" required value={vendorDetails.vendorName} onChange={handleVendorChange} placeholder="e.g. Campus Kitchen" className="rounded-xl h-12" />
+                  <Input 
+                    id="vendorName" 
+                    name="vendorName"
+                    required 
+                    value={vendorDetails.vendorName} 
+                    onChange={handleVendorChange} 
+                    placeholder="e.g. Campus Kitchen" 
+                    className="rounded-xl h-12" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
-                  <Input id="location" required value={vendorDetails.location} onChange={handleVendorChange} placeholder="e.g. Main Cafeteria, Stall 4" className="rounded-xl h-12" />
+                  <Input 
+                    id="location" 
+                    name="location"
+                    required 
+                    value={vendorDetails.location} 
+                    onChange={handleVendorChange} 
+                    placeholder="e.g. Main Cafeteria, Stall 4" 
+                    className="rounded-xl h-12" 
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Short Description</Label>
-                <Textarea id="description" required value={vendorDetails.description} onChange={handleVendorChange} placeholder="Tell customers what makes your food special..." className="rounded-xl min-h-[100px]" />
+                <Textarea 
+                  id="description" 
+                  name="description"
+                  required 
+                  value={vendorDetails.description} 
+                  onChange={handleVendorChange} 
+                  placeholder="Tell customers what makes your food special..." 
+                  className="rounded-xl min-h-[100px]" 
+                />
               </div>
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contactNumber">Contact Number</Label>
-                  <Input id="contactNumber" required value={vendorDetails.contactNumber} onChange={handleVendorChange} placeholder="09XX-XXX-XXXX" className="rounded-xl h-12" />
+                  <Input 
+                    id="contactNumber" 
+                    name="contactNumber"
+                    required 
+                    value={vendorDetails.contactNumber} 
+                    onChange={handleVendorChange} 
+                    placeholder="09XX-XXX-XXXX" 
+                    className="rounded-xl h-12" 
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="openingTime" className="flex items-center gap-2">
@@ -168,11 +200,12 @@ export default function VendorSetupPage() {
                   </Label>
                   <Input 
                     id="openingTime" 
+                    name="openingTime"
                     type="time" 
                     required 
                     value={vendorDetails.openingTime} 
                     onChange={handleVendorChange} 
-                    className="rounded-xl h-12 cursor-pointer bg-white" 
+                    className="rounded-xl h-12 bg-white" 
                   />
                 </div>
                 <div className="space-y-2">
@@ -181,11 +214,12 @@ export default function VendorSetupPage() {
                   </Label>
                   <Input 
                     id="closingTime" 
+                    name="closingTime"
                     type="time" 
                     required 
                     value={vendorDetails.closingTime} 
                     onChange={handleVendorChange} 
-                    className="rounded-xl h-12 cursor-pointer bg-white" 
+                    className="rounded-xl h-12 bg-white" 
                   />
                 </div>
               </div>
