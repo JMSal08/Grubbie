@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -5,9 +6,11 @@ import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Zap, ShieldCheck, Utensils } from 'lucide-react';
 import Link from 'next/link';
+import { useUser } from '@/firebase';
 
 export default function Home() {
   const [cartCount, setCartCount] = useState(0);
+  const { user } = useUser();
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -28,9 +31,11 @@ export default function Home() {
                 <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
                   <Link href="/menu">Browse Menu</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-xl font-bold border-accent text-accent hover:bg-accent hover:text-white" asChild>
-                  <Link href="/auth/signup">Sign Up</Link>
-                </Button>
+                {!user && (
+                  <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-xl font-bold border-accent text-accent hover:bg-accent hover:text-white" asChild>
+                    <Link href="/auth/signup">Sign Up</Link>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -76,15 +81,19 @@ export default function Home() {
             <h4 className="font-bold text-lg">Quick Links</h4>
             <ul className="space-y-2 opacity-70">
               <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>
-              <li><Link href="/orders" className="hover:text-primary">Track Order</Link></li>
+              {user && <li><Link href="/orders" className="hover:text-primary">Track Order</Link></li>}
               <li><Link href="/about" className="hover:text-primary">About Us</Link></li>
             </ul>
           </div>
           <div className="space-y-4">
             <h4 className="font-bold text-lg">For Partners</h4>
             <ul className="space-y-2 opacity-70">
-              <li><Link href="/auth/login" className="hover:text-primary">Vendor Login</Link></li>
-              <li><Link href="/auth/signup" className="hover:text-primary">Register Kitchen</Link></li>
+              {!user && (
+                <>
+                  <li><Link href="/auth/login" className="hover:text-primary">Vendor Login</Link></li>
+                  <li><Link href="/auth/signup" className="hover:text-primary">Register Kitchen</Link></li>
+                </>
+              )}
               <li><Link href="/policies" className="hover:text-primary">Vendor Policies</Link></li>
             </ul>
           </div>
