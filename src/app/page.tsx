@@ -28,8 +28,8 @@ export default function Home() {
                 <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
                   <Link href="/menu">Browse Menu</Link>
                 </Button>
-                <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-xl font-bold border-accent text-accent hover:bg-accent hover:text-white">
-                  Join as Vendor
+                <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-xl font-bold border-accent text-accent hover:bg-accent hover:text-white" asChild>
+                  <Link href="/auth/signup">Sign Up</Link>
                 </Button>
               </div>
             </div>
@@ -83,8 +83,8 @@ export default function Home() {
           <div className="space-y-4">
             <h4 className="font-bold text-lg">For Partners</h4>
             <ul className="space-y-2 opacity-70">
-              <li><Link href="/vendor/login" className="hover:text-primary">Vendor Login</Link></li>
-              <li><Link href="/vendor/register" className="hover:text-primary">Register Kitchen</Link></li>
+              <li><Link href="/auth/login" className="hover:text-primary">Vendor Login</Link></li>
+              <li><Link href="/auth/signup" className="hover:text-primary">Register Kitchen</Link></li>
               <li><Link href="/policies" className="hover:text-primary">Vendor Policies</Link></li>
             </ul>
           </div>
