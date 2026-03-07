@@ -12,7 +12,7 @@ import { useUser, useFirestore } from '@/firebase';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Trash2, Store, UtensilsCrossed, ArrowRight, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Store, UtensilsCrossed, ArrowRight, Loader2, Clock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface NewMenuItem {
@@ -50,7 +50,8 @@ export default function VendorSetupPage() {
   }, [user, isUserLoading, router]);
 
   const handleVendorChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setVendorDetails(prev => ({ ...prev, [e.target.id]: e.target.value }));
+    const { id, value } = e.target;
+    setVendorDetails(prev => ({ ...prev, [id]: value }));
   };
 
   const handleMenuItemChange = (index: number, field: keyof NewMenuItem, value: string) => {
@@ -145,11 +146,11 @@ export default function VendorSetupPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="vendorName">Store Name</Label>
-                  <Input id="vendorName" required value={vendorDetails.vendorName} onChange={handleVendorChange} placeholder="e.g. Campus Kitchen" className="rounded-xl" />
+                  <Input id="vendorName" required value={vendorDetails.vendorName} onChange={handleVendorChange} placeholder="e.g. Campus Kitchen" className="rounded-xl h-12" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="location">Location</Label>
-                  <Input id="location" required value={vendorDetails.location} onChange={handleVendorChange} placeholder="e.g. Main Cafeteria, Stall 4" className="rounded-xl" />
+                  <Input id="location" required value={vendorDetails.location} onChange={handleVendorChange} placeholder="e.g. Main Cafeteria, Stall 4" className="rounded-xl h-12" />
                 </div>
               </div>
               <div className="space-y-2">
@@ -159,15 +160,33 @@ export default function VendorSetupPage() {
               <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="contactNumber">Contact Number</Label>
-                  <Input id="contactNumber" required value={vendorDetails.contactNumber} onChange={handleVendorChange} placeholder="09XX-XXX-XXXX" className="rounded-xl" />
+                  <Input id="contactNumber" required value={vendorDetails.contactNumber} onChange={handleVendorChange} placeholder="09XX-XXX-XXXX" className="rounded-xl h-12" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="openingTime">Opening Time</Label>
-                  <Input id="openingTime" type="time" required value={vendorDetails.openingTime} onChange={handleVendorChange} className="rounded-xl" />
+                  <Label htmlFor="openingTime" className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Opening Time
+                  </Label>
+                  <Input 
+                    id="openingTime" 
+                    type="time" 
+                    required 
+                    value={vendorDetails.openingTime} 
+                    onChange={handleVendorChange} 
+                    className="rounded-xl h-12 cursor-pointer bg-white" 
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="closingTime">Closing Time</Label>
-                  <Input id="closingTime" type="time" required value={vendorDetails.closingTime} onChange={handleVendorChange} className="rounded-xl" />
+                  <Label htmlFor="closingTime" className="flex items-center gap-2">
+                    <Clock className="h-4 w-4" /> Closing Time
+                  </Label>
+                  <Input 
+                    id="closingTime" 
+                    type="time" 
+                    required 
+                    value={vendorDetails.closingTime} 
+                    onChange={handleVendorChange} 
+                    className="rounded-xl h-12 cursor-pointer bg-white" 
+                  />
                 </div>
               </div>
             </CardContent>
@@ -190,22 +209,22 @@ export default function VendorSetupPage() {
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div className="space-y-2">
                       <Label>Item Name</Label>
-                      <Input value={item.name} onChange={(e) => handleMenuItemChange(index, 'name', e.target.value)} required placeholder="e.g. Classic Cheeseburger" className="rounded-xl bg-white" />
+                      <Input value={item.name} onChange={(e) => handleMenuItemChange(index, 'name', e.target.value)} required placeholder="e.g. Classic Cheeseburger" className="rounded-xl bg-white h-12" />
                     </div>
                     <div className="space-y-2">
                       <Label>Price (₱)</Label>
-                      <Input type="number" value={item.price} onChange={(e) => handleMenuItemChange(index, 'price', e.target.value)} required placeholder="0.00" className="rounded-xl bg-white" />
+                      <Input type="number" value={item.price} onChange={(e) => handleMenuItemChange(index, 'price', e.target.value)} required placeholder="0.00" className="rounded-xl bg-white h-12" />
                     </div>
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>Description</Label>
-                      <Input value={item.description} onChange={(e) => handleMenuItemChange(index, 'description', e.target.value)} placeholder="Ingredients, spice level, etc." className="rounded-xl bg-white" />
+                      <Input value={item.description} onChange={(e) => handleMenuItemChange(index, 'description', e.target.value)} placeholder="Ingredients, spice level, etc." className="rounded-xl bg-white h-12" />
                     </div>
                     <div className="space-y-2">
                       <Label>Campus Area</Label>
                       <Select value={item.category} onValueChange={(val) => handleMenuItemChange(index, 'category', val)}>
-                        <SelectTrigger className="rounded-xl bg-white">
+                        <SelectTrigger className="rounded-xl bg-white h-12">
                           <SelectValue placeholder="Select area" />
                         </SelectTrigger>
                         <SelectContent>
