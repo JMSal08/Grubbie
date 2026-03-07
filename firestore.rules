@@ -37,7 +37,10 @@ service cloud.firestore {
      * @description Rules for the top-level User documents.
      */
     match /users/{userId} {
-      allow get, list: if isSignedIn(); // Allow reading other users for vendor discovery join
+      // Allow reading other users if the requester is signed in 
+      // OR if the document belongs to a vendor (needed for public menu discovery).
+      allow get, list: if isSignedIn() || (resource != null && resource.data.userType == 'vendor');
+      
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId) || isAdmin();
       allow delete: if isOwner(userId) || isAdmin();
