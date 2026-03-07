@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +13,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail, AlertTriangle, Trash2 } from 'lucide-react';
+import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail, AlertTriangle, Trash2, LayoutDashboard } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
@@ -141,6 +142,14 @@ export default function ProfilePage() {
                   <Mail className="h-4 w-4" />
                   <span>{userData.email}</span>
                 </div>
+                {isVendor && (
+                  <Button variant="outline" size="sm" asChild className="rounded-full mt-2 w-full gap-2">
+                    <Link href="/vendor/dashboard">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Vendor Dashboard
+                    </Link>
+                  </Button>
+                )}
               </CardContent>
             </Card>
 
