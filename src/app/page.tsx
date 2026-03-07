@@ -4,13 +4,22 @@
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
-import { Zap, ShieldCheck, Utensils } from 'lucide-react';
+import { Zap, ShieldCheck, Utensils, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function Home() {
   const [cartCount, setCartCount] = useState(0);
   const { user } = useUser();
+  const db = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+
+  const { data: userData } = useDoc(userDocRef);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -31,6 +40,16 @@ export default function Home() {
                 <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
                   <Link href="/menu">Browse Menu</Link>
                 </Button>
+                
+                {userData?.userType === 'vendor' && (
+                  <Button size="lg" variant="secondary" className="rounded-full px-12 h-16 text-xl font-bold gap-3" asChild>
+                    <Link href="/vendor/dashboard">
+                      <LayoutDashboard className="h-6 w-6" />
+                      Vendor Dashboard
+                    </Link>
+                  </Button>
+                )}
+
                 {!user && (
                   <Button size="lg" variant="outline" className="rounded-full px-12 h-16 text-xl font-bold border-accent text-accent hover:bg-accent hover:text-white" asChild>
                     <Link href="/auth/signup">Sign Up</Link>
@@ -93,6 +112,9 @@ export default function Home() {
                   <li><Link href="/auth/login" className="hover:text-primary">Vendor Login</Link></li>
                   <li><Link href="/auth/signup" className="hover:text-primary">Register Kitchen</Link></li>
                 </>
+              )}
+              {userData?.userType === 'vendor' && (
+                <li><Link href="/vendor/dashboard" className="hover:text-primary">Vendor Dashboard</Link></li>
               )}
               <li><Link href="/policies" className="hover:text-primary">Vendor Policies</Link></li>
             </ul>
