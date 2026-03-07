@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { useUser, useAuth } from '@/firebase';
 import { deleteUser, signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
-import { AlertCircle, Trash2, Loader2, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Trash2, Loader2, ArrowLeft, MailOpen } from 'lucide-react';
 import Link from 'next/link';
 
 export default function DeleteConfirmPage() {
@@ -43,8 +43,8 @@ export default function DeleteConfirmPage() {
         if (error.code === 'auth/requires-recent-login') {
           toast({
             variant: "destructive",
-            title: "Verification Required",
-            description: "For your security, please log in again to verify your identity before deleting your account.",
+            title: "Security Verification Required",
+            description: "For your protection, please log out and log back in before deleting your account.",
           });
           signOut(auth);
           router.push('/auth/login');
@@ -60,7 +60,7 @@ export default function DeleteConfirmPage() {
   };
 
   if (isUserLoading) {
-    return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    return <div className="min-h-screen flex items-center justify-center bg-secondary/10"><Loader2 className="animate-spin text-primary" /></div>;
   }
 
   if (!user) return null;
@@ -69,43 +69,47 @@ export default function DeleteConfirmPage() {
     <div className="min-h-screen bg-secondary/10">
       <Navbar />
       <main className="container mx-auto px-4 py-20 flex justify-center">
-        <Card className="w-full max-w-md border-none shadow-xl">
-          <CardHeader className="text-center space-y-4">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
-              <AlertCircle className="h-8 w-8" />
+        <Card className="w-full max-w-md border-2 border-red-100 shadow-2xl overflow-hidden">
+          <div className="bg-red-600 h-2 w-full" />
+          <CardHeader className="text-center space-y-4 pt-8">
+            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto text-red-600">
+              <MailOpen className="h-10 w-10" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-headline font-bold text-red-600">Final Verification</CardTitle>
-              <CardDescription>
-                This is your final chance to cancel. Deleting your account will permanently erase your orders, reviews, and profile.
+              <CardTitle className="text-3xl font-headline font-bold text-red-600">Final Confirmation</CardTitle>
+              <CardDescription className="text-foreground/70 font-medium">
+                You have clicked the secure link from your email. This is the final step to permanently delete your account.
               </CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label className="font-bold">Confirmation Required</Label>
-              <p className="text-sm text-muted-foreground mb-2">
-                Type <span className="font-bold text-foreground">delete</span> below to confirm permanent account removal.
+          <CardContent className="space-y-6 pt-4">
+            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 items-start">
+              <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+              <p className="text-xs text-red-800 leading-relaxed">
+                Deleting your account will immediately remove all your data, including order history, profile information, and vendor settings. This cannot be undone.
               </p>
+            </div>
+            <div className="space-y-3">
+              <Label className="font-bold text-sm uppercase tracking-wider text-muted-foreground">Type "delete" to confirm</Label>
               <Input
                 value={confirmText}
                 onChange={(e) => setConfirmText(e.target.value)}
                 placeholder="Type delete to confirm"
-                className="rounded-xl h-12 border-red-200 focus:ring-red-500"
+                className="rounded-xl h-14 border-red-200 focus:ring-red-500 text-lg text-center font-bold"
               />
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 pb-10">
             <Button 
               onClick={handleFinalDelete} 
-              className="w-full h-14 rounded-full bg-red-600 hover:bg-red-700 font-bold text-lg shadow-lg gap-2"
+              className="w-full h-14 rounded-full bg-red-600 hover:bg-red-700 font-bold text-lg shadow-lg gap-3"
               disabled={confirmText.toLowerCase() !== "delete" || isDeleting}
             >
-              {isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : <><Trash2 className="h-5 w-5" /> Delete Account Permanently</>}
+              {isDeleting ? <Loader2 className="animate-spin h-5 w-5" /> : <><Trash2 className="h-5 w-5" /> Delete My Account Forever</>}
             </Button>
-            <Button variant="ghost" asChild className="rounded-full">
+            <Button variant="ghost" asChild className="rounded-full h-12 font-medium">
               <Link href="/profile">
-                <ArrowLeft className="h-4 w-4 mr-2" /> Keep My Account
+                <ArrowLeft className="h-4 w-4 mr-2" /> No, keep my account
               </Link>
             </Button>
           </CardFooter>

@@ -13,7 +13,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail, AlertTriangle } from 'lucide-react';
+import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail, AlertTriangle, Trash2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
@@ -86,7 +86,7 @@ export default function ProfilePage() {
       updatedAt: serverTimestamp(),
     }, { merge: true });
 
-    // Simulate a brief delay for UX if it's too fast, though non-blocking handles it
+    // Simulate a brief delay for UX if it's too fast
     setTimeout(() => {
       setIsSaving(false);
       toast({
@@ -99,11 +99,16 @@ export default function ProfilePage() {
   const handleDeleteInitiated = () => {
     if (deleteConfirmText.toLowerCase() === "delete") {
       setIsDeleteDialogOpen(false);
+      
+      // Notify about the email
       toast({
-        title: "Deletion Link Sent",
-        description: "A secure verification link has been sent to your email. Please click it to finalize account deletion.",
+        title: "Deletion Flow Started",
+        description: "A secure link would be sent to your email. Redirecting to final verification page for this prototype.",
       });
-      // In a real implementation, this would trigger a backend process to send the email link to /auth/delete-confirm
+
+      // Redirect to the final confirmation page (simulating clicking the email link)
+      router.push('/auth/delete-confirm');
+      
       setDeleteConfirmText("");
     }
   };
@@ -161,30 +166,31 @@ export default function ProfilePage() {
             </div>
 
             {/* Danger Zone */}
-            <Card className="border-none shadow-sm bg-red-50 border-red-100">
+            <Card className="border-2 border-red-200 shadow-sm bg-red-50">
               <CardHeader className="pb-2">
                 <CardTitle className="text-red-600 text-sm font-bold flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4" /> Danger Zone
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-xs text-red-700">
-                  Permanently remove your account and all associated data. This action is irreversible.
+                <p className="text-xs text-red-700 font-medium">
+                  Permanently remove your account. This action is irreversible and requires email verification.
                 </p>
                 <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
                   <DialogTrigger asChild>
                     <Button 
                       variant="destructive" 
-                      className="w-full rounded-full bg-red-600 hover:bg-red-700 font-bold shadow-sm"
+                      className="w-full rounded-full bg-red-600 hover:bg-red-700 font-bold shadow-md h-12 gap-2"
                     >
+                      <Trash2 className="h-4 w-4" />
                       Delete Account
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="rounded-3xl">
                     <DialogHeader>
-                      <DialogTitle className="font-headline text-red-600">Are you absolutely sure?</DialogTitle>
+                      <DialogTitle className="font-headline text-red-600">Start Deletion Process?</DialogTitle>
                       <DialogDescription>
-                        To initiate deletion, please type <span className="font-bold text-foreground">delete</span> in the field below. A verification email will be sent to your account.
+                        To receive a deletion link via email, please type <span className="font-bold text-foreground">delete</span> in the field below.
                       </DialogDescription>
                     </DialogHeader>
                     <div className="py-4">
@@ -201,7 +207,7 @@ export default function ProfilePage() {
                         variant="destructive" 
                         onClick={handleDeleteInitiated}
                         disabled={deleteConfirmText.toLowerCase() !== "delete"}
-                        className="rounded-full px-8 bg-red-600 font-bold"
+                        className="rounded-full px-8 bg-red-600 font-bold h-12"
                       >
                         Send Deletion Link
                       </Button>
@@ -363,7 +369,7 @@ export default function ProfilePage() {
                   <Button type="button" variant="ghost" onClick={() => router.back()} className="rounded-full">
                     Cancel
                   </Button>
-                  <Button type="submit" className="rounded-full gap-2 px-8" disabled={isSaving}>
+                  <Button type="submit" className="rounded-full gap-2 px-8 h-12 font-bold" disabled={isSaving}>
                     {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Save Changes
                   </Button>
