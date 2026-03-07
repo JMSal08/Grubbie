@@ -52,19 +52,8 @@ export default function SignupPage() {
         }, { merge: true });
         router.push('/');
       } else if (userType === 'vendor') {
-        const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
-        setDocumentNonBlocking(vendorRef, {
-          id: 'profile',
-          userId: user.uid,
-          vendorName: 'New Vendor',
-          description: '',
-          location: '',
-          contactNumber: '',
-          openingTime: '08:00',
-          closingTime: '20:00',
-          lastLoginAt: serverTimestamp(),
-        }, { merge: true });
-        // Redirect vendors to setup page instead of home
+        // For vendors, we do NOT create the profile stub here.
+        // They are redirected to the setup page where the profile is created upon completion.
         router.push('/vendor/setup');
       }
     }

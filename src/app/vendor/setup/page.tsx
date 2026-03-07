@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -78,11 +77,13 @@ export default function VendorSetupPage() {
     setIsSubmitting(true);
 
     try {
-      // 1. Update Vendor Profile
+      // 1. Create/Update Vendor Profile
       const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
       setDocumentNonBlocking(vendorRef, {
         ...vendorDetails,
+        id: 'profile',
         userId: user.uid,
+        lastLoginAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       }, { merge: true });
 
