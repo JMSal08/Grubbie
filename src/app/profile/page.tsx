@@ -13,6 +13,7 @@ import { doc, serverTimestamp } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { User, UserCircle, Store, Save, Loader2, Clock, Phone, Mail } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -37,11 +38,14 @@ export default function ProfilePage() {
 
   const [formData, setFormData] = useState<any>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [locationType, setLocationType] = useState<string>('Other');
 
   // Initialize form data when profile data is loaded
   useEffect(() => {
     if (profileData) {
       setFormData(profileData);
+      const type = ['Cafeteria', 'Southpoint'].includes(profileData.location) ? profileData.location : 'Other';
+      setLocationType(type);
     }
   }, [profileData]);
 
@@ -124,7 +128,9 @@ export default function ProfilePage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm">Member Since</span>
-                <span className="text-sm font-medium">{new Date(userData.createdAt?.seconds * 1000).toLocaleDateString() || 'Recently'}</span>
+                <span className="text-sm font-medium">
+                  {userData.createdAt?.seconds ? new Date(userData.createdAt.seconds * 1000).toLocaleDateString() : 'Recently'}
+                </span>
               </div>
             </div>
           </div>
@@ -162,15 +168,41 @@ export default function ProfilePage() {
                         />
                       </div>
                       <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="location">Location</Label>
-                          <Input 
-                            id="location" 
-                            name="location"
-                            value={formData.location || ''} 
-                            onChange={handleInputChange} 
-                            className="rounded-xl h-12" 
-                          />
+                        <div className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="location-select">Location Area</Label>
+                            <Select 
+                              value={locationType} 
+                              onValueChange={(val) => {
+                                setLocationType(val);
+                                if (val !== 'Other') {
+                                  setFormData((prev: any) => ({ ...prev, location: val }));
+                                }
+                              }}
+                            >
+                              <SelectTrigger id="location-select" className="rounded-xl h-12 bg-white">
+                                <SelectValue placeholder="Select location" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Cafeteria">Cafeteria</SelectItem>
+                                <SelectItem value="Southpoint">Southpoint</SelectItem>
+                                <SelectItem value="Other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {locationType === 'Other' && (
+                            <div className="space-y-2">
+                              <Label htmlFor="location">Specific Location</Label>
+                              <Input 
+                                id="location" 
+                                name="location"
+                                value={formData.location || ''} 
+                                onChange={handleInputChange} 
+                                placeholder="Specify your location..."
+                                className="rounded-xl h-12" 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="contactNumber">Contact Number</Label>

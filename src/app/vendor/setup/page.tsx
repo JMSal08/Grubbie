@@ -37,6 +37,8 @@ export default function VendorSetupPage() {
     closingTime: '20:00',
   });
 
+  const [locationType, setLocationType] = useState<string>('Cafeteria');
+
   const [menuItems, setMenuItems] = useState<NewMenuItem[]>([
     { name: '', description: '', price: '', category: 'Cafeteria' }
   ]);
@@ -156,17 +158,42 @@ export default function VendorSetupPage() {
                     className="rounded-xl h-12" 
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="location">Location</Label>
-                  <Input 
-                    id="location" 
-                    name="location"
-                    required 
-                    value={vendorDetails.location} 
-                    onChange={handleVendorChange} 
-                    placeholder="e.g. Main Cafeteria, Stall 4" 
-                    className="rounded-xl h-12" 
-                  />
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="location-select">Location Area</Label>
+                    <Select 
+                      value={locationType} 
+                      onValueChange={(val) => {
+                        setLocationType(val);
+                        if (val !== 'Other') {
+                          setVendorDetails(prev => ({ ...prev, location: val }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger id="location-select" className="rounded-xl h-12 bg-white">
+                        <SelectValue placeholder="Select location" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Cafeteria">Cafeteria</SelectItem>
+                        <SelectItem value="Southpoint">Southpoint</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {locationType === 'Other' && (
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Specific Location</Label>
+                      <Input 
+                        id="location" 
+                        name="location"
+                        required 
+                        value={vendorDetails.location} 
+                        onChange={handleVendorChange} 
+                        placeholder="e.g. Building A, Room 101" 
+                        className="rounded-xl h-12" 
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
