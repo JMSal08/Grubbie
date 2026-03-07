@@ -85,15 +85,19 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // This logic extracts the path from either a ref or a query
-        const path: string =
-          memoizedTargetRefOrQuery.type === 'collection'
+        // Extract the path for contextual error reporting
+        let path: string;
+        try {
+          path = memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
-            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
+            : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString();
+        } catch (e) {
+          path = '[Collection Group or Unknown Path]';
+        }
 
         const contextualError = new FirestorePermissionError({
           operation: 'list',
-          path,
+          path: path || '[Root or Group Query]',
         })
 
         setError(contextualError)
@@ -107,6 +111,7 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
   }

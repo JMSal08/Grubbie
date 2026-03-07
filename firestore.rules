@@ -7,18 +7,6 @@ service cloud.firestore {
      * This ruleset enforces a strict ownership and role-based access model for the Grubbie application. 
      * It leverages denormalization (storing IDs like vendorId and customerId directly on documents) 
      * to ensure authorization is fast, independent, and does not require recursive 'get()' calls.
-     * 
-     * DATA STRUCTURE
-     * - /users/{userId}: Primary user accounts.
-     * - /users/{userId}/customerProfile & /users/{userId}/vendorProfile: Persona-specific data.
-     * - /menuItems, /orders, /reviews, /reports: Top-level collections for global access and querying.
-     * - /roles_admin: A protected collection for verifying administrative status.
-     * 
-     * KEY SECURITY DECISIONS
-     * - Prototyping Mode: Rules enforce 'who' can access data but are flexible on 'what' the data looks like (no schema validation).
-     * - Shared Access: Orders are accessible by both the creating customer and the target vendor.
-     * - Public Read: Menu items, Menu types, and Reviews are publicly readable to support browsing.
-     * - Relational Integrity: On creation, we enforce that ownership fields (e.g., customerId) match the authenticated user.
      */
 
     // --- Helper Functions ---
@@ -47,10 +35,6 @@ service cloud.firestore {
 
     /**
      * @description Rules for the top-level User documents.
-     * @path /users/{userId}
-     * @allow (get, list, create, update) if the userId matches the authenticated user.
-     * @deny (create) if the userId does not match the authenticated user.
-     * @principle Enforces strict user-ownership of account metadata.
      */
     match /users/{userId} {
       allow get, list: if isOwner(userId) || isAdmin();
@@ -60,10 +44,6 @@ service cloud.firestore {
 
       /**
        * @description Subcollection for Customer-specific profile data.
-       * @path /users/{userId}/customerProfile/{profileId}
-       * @allow (all) if the user owns the parent User document.
-       * @deny (all) if accessed by a different user.
-       * @principle Path-based authorization for user profiles.
        */
       match /customerProfile/{profileId} {
         allow get, list: if isOwner(userId) || isAdmin();
@@ -71,27 +51,29 @@ service cloud.firestore {
         allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
         allow delete: if isAdmin();
       }
+
+      /**
+       * @description Subcollection for Vendor-specific profile data (Hierarchy access).
+       */
+      match /vendorProfile/{profileId} {
+        allow read: if true;
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if isAdmin();
+      }
     }
 
     /**
-     * @description Subcollection for Vendor-specific profile data.
-     * Supports collection group queries for public browsing of vendors.
-     * @path /{path=**}/vendorProfile/{profileId}
-     * @principle Public profile visibility with owner-only modifications, supporting cross-user listing.
+     * @description Collection Group match for Vendor discovery.
+     * This recursive wildcard pattern is required for query(collectionGroup(db, 'vendorProfile')).
      */
     match /{path=**}/vendorProfile/{profileId} {
       allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow delete: if isAdmin();
+      // Writes are handled by the specific hierarchy match above
     }
 
     /**
      * @description Global administrative role verification.
-     * @path /roles_admin/{adminId}
-     * @allow (get) if signed in; (write) if already an admin.
-     * @deny (write) for non-admin users.
-     * @principle Restricted access to administrative role assignments.
      */
     match /roles_admin/{adminId} {
       allow get: if isSignedIn();
@@ -101,10 +83,6 @@ service cloud.firestore {
 
     /**
      * @description Categories for food items (e.g., 'Cafeteria').
-     * @path /menuTypes/{menuTypeId}
-     * @allow (get, list) for everyone.
-     * @allow (write) for admins only.
-     * @principle Public categories with administrative management.
      */
     match /menuTypes/{menuTypeId} {
       allow get, list: if true;
@@ -113,11 +91,6 @@ service cloud.firestore {
 
     /**
      * @description Food items offered by vendors.
-     * @path /menuItems/{menuItemId}
-     * @allow (get, list) for everyone.
-     * @allow (create) if the vendorId in data matches the user.
-     * @deny (update) if a user tries to modify a menu item they don't own.
-     * @principle Public browsing with vendor-ownership for management.
      */
     match /menuItems/{menuItemId} {
       allow get, list: if true;
@@ -128,10 +101,6 @@ service cloud.firestore {
 
     /**
      * @description Customer pre-orders.
-     * @path /orders/{orderId}
-     * @allow (get, list) if the user is the customer or the vendor for the order.
-     * @allow (create) if the user is the customer (customerId matches auth.uid).
-     * @principle Shared access model between two specific parties (Buyer/Seller).
      */
     match /orders/{orderId} {
       allow get, list: if isInvolvedInOrder(resource.data) || isAdmin();
@@ -139,12 +108,6 @@ service cloud.firestore {
       allow update: if resource != null && (isInvolvedInOrder(resource.data) || isAdmin());
       allow delete: if isAdmin();
 
-      /**
-       * @description Line items within a specific order.
-       * @path /orders/{orderId}/orderItems/{orderItemId}
-       * @allow (all) if user has access to the parent order.
-       * @principle Inherited security from parent order document.
-       */
       match /orderItems/{orderItemId} {
         allow get, list: if isInvolvedInOrder(get(/databases/$(database)/documents/orders/$(orderId)).data) || isAdmin();
         allow create, update, delete: if isInvolvedInOrder(get(/databases/$(database)/documents/orders/$(orderId)).data) || isAdmin();
@@ -153,11 +116,6 @@ service cloud.firestore {
 
     /**
      * @description Ratings and written reviews.
-     * @path /reviews/{reviewId}
-     * @allow (get, list) for everyone.
-     * @allow (create) if customerId in data matches the user.
-     * @deny (update) if trying to edit someone else's review.
-     * @principle Public visibility with author-only creation/editing.
      */
     match /reviews/{reviewId} {
       allow get, list: if true;
@@ -168,11 +126,6 @@ service cloud.firestore {
 
     /**
      * @description Reports submitted by vendors against customer behavior.
-     * @path /reports/{reportId}
-     * @allow (get) if reporting vendor or admin.
-     * @allow (create) if reportingVendorId matches the user.
-     * @deny (list) for non-admin users.
-     * @principle Restricted visibility for sensitive behavioral reports.
      */
     match /reports/{reportId} {
       allow get: if (isSignedIn() && resource.data.reportingVendorId == request.auth.uid) || isAdmin();
