@@ -1,3 +1,4 @@
+
 export type UserRole = 'customer' | 'vendor' | 'admin';
 
 export interface User {
@@ -20,6 +21,7 @@ export interface Vendor {
   rating: number;
   reviewsCount: number;
   location: string;
+  isOnline: boolean;
 }
 
 export interface FoodItem {

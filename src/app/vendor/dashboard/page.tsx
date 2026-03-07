@@ -1,10 +1,13 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { MOCK_ORDERS } from '@/lib/mock-data';
 import { 
   BarChart3, 
@@ -14,30 +17,89 @@ import {
   Check, 
   Clock, 
   AlertTriangle,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  Power
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc, serverTimestamp } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 export default function VendorDashboard() {
-  const [activeTab, setActiveTab] = useState('orders');
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const { toast } = useToast();
+
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid, 'vendorProfile', 'profile');
+  }, [db, user]);
+
+  const { data: profileData, isLoading: isProfileLoading } = useDoc(profileRef);
+
+  const toggleStatus = (online: boolean) => {
+    if (!profileRef) return;
+    
+    updateDocumentNonBlocking(profileRef, {
+      isOnline: online,
+      updatedAt: serverTimestamp()
+    });
+
+    toast({
+      title: online ? "Kitchen is Online" : "Kitchen is Offline",
+      description: online ? "Your store is now visible to customers." : "Customers can no longer see your store on the menu.",
+    });
+  };
+
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="min-h-screen bg-secondary/10 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user || !profileData) return null;
 
   return (
     <div className="min-h-screen bg-secondary/10">
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-headline font-bold text-accent">Campus Kitchen</h1>
-            <p className="text-muted-foreground">Managing your food hub operations</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 bg-white p-6 rounded-3xl shadow-sm border">
+          <div className="flex items-center gap-4">
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${profileData.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              <Power className="h-8 w-8" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-headline font-bold text-accent">{profileData.vendorName || 'Campus Kitchen'}</h1>
+              <p className="text-muted-foreground">Managing your food hub operations</p>
+            </div>
           </div>
-          <div className="flex gap-3">
-            <Button className="rounded-full gap-2">
-              <Plus className="h-4 w-4" /> Add Item
-            </Button>
-            <Button variant="outline" className="rounded-full gap-2 border-accent text-accent">
-              <Settings className="h-4 w-4" /> Settings
-            </Button>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
+            <div className="flex items-center gap-3 bg-secondary/30 px-6 py-3 rounded-full border">
+              <Label htmlFor="online-status" className="font-bold text-sm uppercase tracking-wider cursor-pointer">
+                {profileData.isOnline ? 'Online' : 'Offline'}
+              </Label>
+              <Switch 
+                id="online-status" 
+                checked={!!profileData.isOnline} 
+                onCheckedChange={toggleStatus}
+              />
+            </div>
+            
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button className="rounded-full gap-2 flex-1 sm:flex-none">
+                <Plus className="h-4 w-4" /> Add Item
+              </Button>
+              <Button variant="outline" className="rounded-full gap-2 border-accent text-accent flex-1 sm:flex-none">
+                <Settings className="h-4 w-4" /> Settings
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -49,7 +111,7 @@ export default function VendorDashboard() {
                 <Package className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">New Orders</p>
+                <p className="text-sm text-muted-foreground font-bold">New Orders</p>
                 <h3 className="text-2xl font-bold">12</h3>
               </div>
             </CardContent>
@@ -60,7 +122,7 @@ export default function VendorDashboard() {
                 <Clock className="h-6 w-6 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Preparing</p>
+                <p className="text-sm text-muted-foreground font-bold">Preparing</p>
                 <h3 className="text-2xl font-bold">5</h3>
               </div>
             </CardContent>
@@ -71,7 +133,7 @@ export default function VendorDashboard() {
                 <BarChart3 className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Today's Revenue</p>
+                <p className="text-sm text-muted-foreground font-bold">Today's Revenue</p>
                 <h3 className="text-2xl font-bold">₱4,520</h3>
               </div>
             </CardContent>
@@ -82,7 +144,7 @@ export default function VendorDashboard() {
                 <AlertTriangle className="h-6 w-6 text-red-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">Reports</p>
+                <p className="text-sm text-muted-foreground font-bold">Reports</p>
                 <h3 className="text-2xl font-bold">1</h3>
               </div>
             </CardContent>
@@ -91,18 +153,18 @@ export default function VendorDashboard() {
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Active Orders */}
-          <Card className="lg:col-span-2 border-none shadow-md">
-            <CardHeader className="flex flex-row items-center justify-between border-b">
+          <Card className="lg:col-span-2 border-none shadow-md overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
               <div>
                 <CardTitle className="font-headline font-bold">Live Orders</CardTitle>
                 <CardDescription>Updates status in real-time</CardDescription>
               </div>
               <Button variant="ghost" className="text-primary font-bold">View History</Button>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 bg-white">
               <Table>
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent">
+                <TableHeader className="bg-secondary/20">
+                  <TableRow>
                     <TableHead>Customer</TableHead>
                     <TableHead>Order Details</TableHead>
                     <TableHead>Status</TableHead>
@@ -123,7 +185,7 @@ export default function VendorDashboard() {
                         <div className="text-xs font-bold text-accent mt-1 uppercase">{order.paymentMethod}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="capitalize">
+                        <Badge variant="secondary" className="capitalize px-3">
                           {order.status}
                         </Badge>
                       </TableCell>
@@ -165,7 +227,7 @@ export default function VendorDashboard() {
                     </div>
                   </div>
                 ))}
-                <Button className="w-full rounded-full variant-outline border-accent text-accent mt-4">
+                <Button className="w-full rounded-full variant-outline border-accent text-accent mt-4" variant="outline">
                   View Full Analytics <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </CardContent>
@@ -173,11 +235,13 @@ export default function VendorDashboard() {
 
             <Card className="border-none shadow-md bg-red-50/50">
               <CardHeader>
-                <CardTitle className="text-red-800 text-lg font-bold">Flagged Customer</CardTitle>
+                <CardTitle className="text-red-800 text-lg font-bold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" /> Flagged Behavior
+                </CardTitle>
               </CardHeader>
               <CardContent className="p-6 pt-0 space-y-4">
                 <p className="text-sm text-red-700">Vendor reported unruly behavior for user <b>@johndoe123</b> regarding order #ORD-X2.</p>
-                <Button variant="destructive" size="sm" className="rounded-full">Review Report</Button>
+                <Button variant="destructive" size="sm" className="rounded-full w-full">Review Report</Button>
               </CardContent>
             </Card>
           </div>
@@ -186,5 +250,3 @@ export default function VendorDashboard() {
     </div>
   );
 }
-
-import { format } from 'date-fns';

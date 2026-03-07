@@ -71,6 +71,7 @@ export default function MenuPage() {
           rating: 0,
           reviewsCount: 0,
           location: loc || 'Unknown',
+          isOnline: !!doc.isOnline,
         } as Vendor;
       });
   }, [profilesData, usersData]);
