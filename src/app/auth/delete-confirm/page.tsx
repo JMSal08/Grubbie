@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore } from '@/firebase';
 import { deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import { doc, serverTimestamp } from 'firebase/firestore';
+import { setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Trash2, Loader2, ArrowLeft, ShieldAlert, Lock } from 'lucide-react';
 import Link from 'next/link';
@@ -17,6 +19,7 @@ export default function DeleteConfirmPage() {
   const [password, setPassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const { user, isUserLoading } = useUser();
+  const db = useFirestore();
   const auth = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -35,7 +38,24 @@ export default function DeleteConfirmPage() {
         const credential = EmailAuthProvider.credential(user.email, password);
         await reauthenticateWithCredential(user, credential);
         
-        // After successful re-auth, proceed with deletion
+        // --- 1. Firestore Cleanup ---
+        // Mark user document as deleted and block them
+        const userRef = doc(db, 'users', user.uid);
+        setDocumentNonBlocking(userRef, {
+          deletedAt: serverTimestamp(),
+          isBlocked: true,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+
+        // Remove profile subcollections to ensure they don't appear in lists/discovery
+        const customerProfileRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
+        const vendorProfileRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
+        
+        deleteDocumentNonBlocking(customerProfileRef);
+        deleteDocumentNonBlocking(vendorProfileRef);
+        
+        // --- 2. Auth Account Deletion ---
+        // After starting the data cleanup, proceed with account removal
         await deleteUser(user);
         
         toast({
@@ -92,7 +112,7 @@ export default function DeleteConfirmPage() {
             <div className="bg-red-50 p-4 rounded-2xl border border-red-100 flex gap-3 items-start">
               <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               <p className="text-xs text-red-800 leading-relaxed">
-                This action is final. Deleting your account will immediately remove all your data, including order history and profile information.
+                This action is final. Deleting your account will immediately remove your profile from the discovery menu and remove all your data.
               </p>
             </div>
             <div className="space-y-3">

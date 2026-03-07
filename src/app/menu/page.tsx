@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -9,7 +8,7 @@ import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collectionGroup, query } from 'firebase/firestore';
+import { collectionGroup, query, collection, where } from 'firebase/firestore';
 import { Vendor } from '@/lib/types';
 
 export default function MenuPage() {
@@ -18,28 +17,43 @@ export default function MenuPage() {
   const [activeTab, setActiveTab] = useState('Cafeteria');
   const db = useFirestore();
 
-  // Fetch all vendor profiles across all users using a Collection Group query
-  const vendorsQuery = useMemoFirebase(() => {
+  // Fetch all vendor profiles using a Collection Group query
+  const vendorsProfilesQuery = useMemoFirebase(() => {
     if (!db) return null;
     return query(collectionGroup(db, 'vendorProfile'));
   }, [db]);
 
-  const { data: vendorsData, isLoading: vendorsLoading } = useCollection(vendorsQuery);
+  // Fetch user accounts that are vendors to verify their current status
+  const usersQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collection(db, 'users'), where('userType', '==', 'vendor'));
+  }, [db]);
 
-  // Map Firestore documents to our Vendor type
+  const { data: profilesData, isLoading: profilesLoading } = useCollection(vendorsProfilesQuery);
+  const { data: usersData, isLoading: usersLoading } = useCollection(usersQuery);
+
+  // Map and filter vendors based on profile existence and user account status
   const vendors = useMemo(() => {
-    if (!vendorsData) return [];
-    return vendorsData.map(doc => ({
-      id: doc.userId,
-      name: doc.vendorName,
-      description: doc.description,
-      imageUrl: doc.logoUrl || `https://picsum.photos/seed/${doc.userId}/600/400`,
-      category: (doc.location === 'Southpoint' ? 'SouthPoint' : doc.location) as any,
-      rating: 0, // In a real app, we'd aggregate reviews
-      reviewsCount: 0,
-      location: doc.location,
-    })) as Vendor[];
-  }, [vendorsData]);
+    if (!profilesData || !usersData) return [];
+    
+    return profilesData
+      .filter(profile => {
+        // Find the corresponding user account
+        const userAccount = usersData.find(u => u.id === profile.userId);
+        // Only include if user account exists, is not blocked, and not marked as deleted
+        return userAccount && !userAccount.isBlocked && !userAccount.deletedAt;
+      })
+      .map(doc => ({
+        id: doc.userId,
+        name: doc.vendorName,
+        description: doc.description,
+        imageUrl: doc.logoUrl || `https://picsum.photos/seed/${doc.userId}/600/400`,
+        category: (doc.location === 'SouthPoint' ? 'SouthPoint' : doc.location) as any,
+        rating: 0,
+        reviewsCount: 0,
+        location: doc.location,
+      })) as Vendor[];
+  }, [profilesData, usersData]);
 
   const filteredVendors = useMemo(() => {
     return vendors.filter(vendor => 
@@ -47,6 +61,8 @@ export default function MenuPage() {
       vendor.description.toLowerCase().includes(search.toLowerCase())
     );
   }, [vendors, search]);
+
+  const isLoading = profilesLoading || usersLoading;
 
   return (
     <div className="min-h-screen bg-background">
@@ -80,7 +96,7 @@ export default function MenuPage() {
       </header>
 
       <main className="container mx-auto px-4 py-12">
-        {vendorsLoading ? (
+        {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
             <p className="text-muted-foreground">Finding active kitchens...</p>

@@ -37,10 +37,10 @@ service cloud.firestore {
      * @description Rules for the top-level User documents.
      */
     match /users/{userId} {
-      allow get, list: if isOwner(userId) || isAdmin();
+      allow get, list: if isSignedIn(); // Allow reading other users for vendor discovery join
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
 
       /**
        * @description Subcollection for Customer-specific profile data.
@@ -49,7 +49,7 @@ service cloud.firestore {
         allow get, list: if isOwner(userId) || isAdmin();
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
         allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
-        allow delete: if isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
       }
 
       /**
@@ -59,17 +59,15 @@ service cloud.firestore {
         allow read: if true;
         allow create: if isOwner(userId) && request.resource.data.userId == userId;
         allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
-        allow delete: if isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
       }
     }
 
     /**
      * @description Collection Group match for Vendor discovery.
-     * This recursive wildcard pattern is required for query(collectionGroup(db, 'vendorProfile')).
      */
     match /{path=**}/vendorProfile/{profileId} {
       allow read: if true;
-      // Writes are handled by the specific hierarchy match above
     }
 
     /**
