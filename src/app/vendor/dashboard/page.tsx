@@ -239,18 +239,6 @@ export default function VendorDashboard() {
                 </Button>
               </CardContent>
             </Card>
-
-            <Card className="border-none shadow-md bg-red-50/50">
-              <CardHeader>
-                <CardTitle className="text-red-800 text-lg font-bold flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" /> Flagged Behavior
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 pt-0 space-y-4">
-                <p className="text-sm text-red-700">Vendor reported unruly behavior for user <b>@johndoe123</b> regarding order #ORD-X2.</p>
-                <Button variant="destructive" size="sm" className="rounded-full w-full">Review Report</Button>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </main>
