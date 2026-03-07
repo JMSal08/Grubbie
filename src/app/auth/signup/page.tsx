@@ -50,6 +50,7 @@ export default function SignupPage() {
           phoneNumber: '',
           lastLoginAt: serverTimestamp(),
         }, { merge: true });
+        router.push('/');
       } else if (userType === 'vendor') {
         const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
         setDocumentNonBlocking(vendorRef, {
@@ -63,9 +64,9 @@ export default function SignupPage() {
           closingTime: '20:00',
           lastLoginAt: serverTimestamp(),
         }, { merge: true });
+        // Redirect vendors to setup page instead of home
+        router.push('/vendor/setup');
       }
-
-      router.push('/');
     }
   }, [user, isLoading, db, userType, router, email]);
 
