@@ -9,7 +9,14 @@
     pkgs.zulu
   ];
   # Sets environment variables in the workspace
-  env = {};
+  env = {
+    NEXT_PUBLIC_FIREBASE_API_KEY = "AIzaSyB7WgP4NXC5Bw-ZNYr0tk_FmrpGXRC3R-I";
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN = "studio-3971839089-f3478.firebaseapp.com";
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID = "studio-3971839089-f3478";
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET = "studio-3971839089-f3478.firebasestorage.app";
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID = "900353647370";
+    NEXT_PUBLIC_FIREBASE_APP_ID = "1:900353647370:web:d6ae8f598c085c73d750f3";
+  };
   # This adds a file watcher to startup the firebase emulators. The emulators will only start if
   # a firebase.json file is written into the user's directory
   services.firebase.emulators = {
