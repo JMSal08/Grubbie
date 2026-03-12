@@ -80,7 +80,7 @@ export default function SignupPage() {
           <CardHeader className="space-y-1">
             <CardTitle className="text-3xl font-headline font-bold text-center">Create an Account</CardTitle>
             <CardDescription className="text-center">
-              Join Grubbie to skip the lines and enjoy your food
+              Join Grubbie to skip the lines
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSignup}>
