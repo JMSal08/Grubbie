@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, Suspense } from 'react';
@@ -173,7 +172,7 @@ function MenuContent() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
             <h2 className="text-3xl font-headline font-bold text-accent flex items-center gap-3">
               <Store className="h-8 w-8 text-primary" />
-              Storefront Menu
+              Menu
             </h2>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
