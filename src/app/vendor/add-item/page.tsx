@@ -14,7 +14,6 @@ import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
 import { FoodCard } from '@/components/food/FoodCard';
 import { FoodItem } from '@/lib/types';
@@ -36,7 +35,6 @@ export default function AddItemPage() {
     name: '',
     description: '',
     price: '',
-    category: 'Cafeteria',
     imageUrl: '',
     isAvailable: true,
   });
@@ -91,13 +89,17 @@ export default function AddItemPage() {
     setIsSubmitting(true);
     
     const menuItemsCol = collection(db, 'menuItems');
+    const vendorCategory = (profileData.location === 'Cafeteria' || profileData.location === 'SouthPoint') 
+      ? profileData.location.toLowerCase() 
+      : 'other';
+
     addDocumentNonBlocking(menuItemsCol, {
       vendorId: user.uid,
       vendorName: profileData.vendorName,
       name: formData.name,
       description: formData.description,
       price: parseFloat(formData.price),
-      menuTypeId: formData.category.toLowerCase(),
+      menuTypeId: vendorCategory,
       imageUrl: formData.imageUrl || 'https://picsum.photos/seed/food/600/400',
       isAvailable: formData.isAvailable,
       createdAt: serverTimestamp(),
@@ -128,7 +130,7 @@ export default function AddItemPage() {
     name: formData.name || 'Delicious Meal',
     description: formData.description || 'Describe your amazing dish here...',
     price: parseFloat(formData.price) || 0,
-    category: formData.category as any,
+    category: (profileData.location === 'Cafeteria' || profileData.location === 'SouthPoint' ? profileData.location : 'Other') as any,
     vendorId: user.uid,
     vendorName: profileData.vendorName,
     imageUrl: formData.imageUrl || 'https://picsum.photos/seed/food/600/400',
@@ -179,39 +181,21 @@ export default function AddItemPage() {
                     />
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="price">Price (₱)</Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₱</span>
-                        <Input 
-                          id="price" 
-                          name="price"
-                          type="number"
-                          step="0.01"
-                          required
-                          value={formData.price} 
-                          onChange={handleInputChange} 
-                          placeholder="0.00"
-                          className="rounded-xl h-12 pl-10" 
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="category">Campus Area</Label>
-                      <Select 
-                        value={formData.category} 
-                        onValueChange={(val) => setFormData(prev => ({ ...prev, category: val }))}
-                      >
-                        <SelectTrigger id="category" className="rounded-xl h-12 bg-white">
-                          <SelectValue placeholder="Select location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Cafeteria">Cafeteria</SelectItem>
-                          <SelectItem value="SouthPoint">SouthPoint</SelectItem>
-                          <SelectItem value="Other">Other</SelectItem>
-                        </SelectContent>
-                      </Select>
+                  <div className="space-y-2">
+                    <Label htmlFor="price">Price (₱)</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₱</span>
+                      <Input 
+                        id="price" 
+                        name="price"
+                        type="number"
+                        step="0.01"
+                        required
+                        value={formData.price} 
+                        onChange={handleInputChange} 
+                        placeholder="0.00"
+                        className="rounded-xl h-12 pl-10" 
+                      />
                     </div>
                   </div>
 
