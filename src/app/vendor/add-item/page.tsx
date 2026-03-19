@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,11 +10,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { FoodCard } from '@/components/food/FoodCard';
 import { FoodItem } from '@/lib/types';
@@ -37,6 +39,8 @@ export default function AddItemPage() {
     price: '',
     imageUrl: '',
     isAvailable: true,
+    preparationTime: '15',
+    preparationTimeUnit: 'mins',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -54,6 +58,11 @@ export default function AddItemPage() {
     if (name === 'price') {
       const regex = /^\d*\.?\d{0,2}$/;
       if (value !== '' && !regex.test(value)) return;
+    }
+
+    // Limit prep time to positive numbers
+    if (name === 'preparationTime') {
+      if (value !== '' && parseInt(value) < 0) return;
     }
     
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -109,6 +118,8 @@ export default function AddItemPage() {
       menuTypeId: vendorCategory,
       imageUrl: formData.imageUrl || 'https://picsum.photos/seed/food/600/400',
       isAvailable: formData.isAvailable,
+      preparationTime: parseInt(formData.preparationTime) || 15,
+      preparationTimeUnit: formData.preparationTimeUnit,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -142,7 +153,9 @@ export default function AddItemPage() {
     vendorName: profileData.vendorName,
     imageUrl: formData.imageUrl || 'https://picsum.photos/seed/food/600/400',
     rating: 0,
-    reviewsCount: 0
+    reviewsCount: 0,
+    preparationTime: parseInt(formData.preparationTime) || 0,
+    preparationTimeUnit: formData.preparationTimeUnit as any
   };
 
   return (
@@ -188,21 +201,51 @@ export default function AddItemPage() {
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price (₱)</Label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₱</span>
-                      <Input 
-                        id="price" 
-                        name="price"
-                        type="number"
-                        step="0.01"
-                        required
-                        value={formData.price} 
-                        onChange={handleInputChange} 
-                        placeholder="0.00"
-                        className="rounded-xl h-12 pl-10" 
-                      />
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="price">Price (₱)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground">₱</span>
+                        <Input 
+                          id="price" 
+                          name="price"
+                          type="number"
+                          step="0.01"
+                          required
+                          value={formData.price} 
+                          onChange={handleInputChange} 
+                          placeholder="0.00"
+                          className="rounded-xl h-12 pl-10" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-2">
+                        Cooking Time
+                      </Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          name="preparationTime"
+                          type="number"
+                          required
+                          value={formData.preparationTime} 
+                          onChange={handleInputChange} 
+                          className="rounded-xl h-12 flex-1" 
+                        />
+                        <Select 
+                          value={formData.preparationTimeUnit} 
+                          onValueChange={(val) => setFormData(prev => ({ ...prev, preparationTimeUnit: val }))}
+                        >
+                          <SelectTrigger className="rounded-xl h-12 w-28 bg-white">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="mins">Mins</SelectItem>
+                            <SelectItem value="hours">Hours</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 

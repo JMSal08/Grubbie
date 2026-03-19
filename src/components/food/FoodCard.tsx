@@ -1,3 +1,4 @@
+
 "use client";
 
 import Image from 'next/image';
@@ -55,7 +56,11 @@ export function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
-            <span>15-20 mins</span>
+            <span>
+              {item.preparationTime 
+                ? `${item.preparationTime} ${item.preparationTimeUnit === 'hours' ? (item.preparationTime === 1 ? 'hr' : 'hrs') : 'mins'}` 
+                : '15-20 mins'}
+            </span>
           </div>
         </div>
       </CardContent>

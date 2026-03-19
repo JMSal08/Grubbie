@@ -35,6 +35,8 @@ export interface FoodItem {
   imageUrl: string;
   rating: number;
   reviewsCount: number;
+  preparationTime?: number;
+  preparationTimeUnit?: 'mins' | 'hours';
 }
 
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'picked-up' | 'cancelled';

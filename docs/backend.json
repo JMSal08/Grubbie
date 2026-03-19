@@ -227,6 +227,15 @@
           "type": "boolean",
           "description": "Indicates if the food item is currently available for order."
         },
+        "preparationTime": {
+          "type": "number",
+          "description": "Estimated time to prepare the food item."
+        },
+        "preparationTimeUnit": {
+          "type": "string",
+          "description": "Unit for preparation time (mins or hours).",
+          "enum": ["mins", "hours"]
+        },
         "createdAt": {
           "type": "string",
           "description": "Timestamp when the menu item was created.",
