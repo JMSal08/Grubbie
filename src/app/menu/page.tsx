@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, Suspense } from 'react';
@@ -10,7 +11,7 @@ import { Search, Loader2, ArrowLeft, Store, MapPin, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from '@/firebase';
 import { collectionGroup, query, collection, where, doc } from 'firebase/firestore';
 import { Vendor, FoodItem } from '@/lib/types';
 
@@ -21,6 +22,15 @@ function MenuContent() {
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('Cafeteria');
   const db = useFirestore();
+  const { user } = useUser();
+
+  // Current logged in user info to check if they are a vendor
+  const loggedInUserRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+  const { data: loggedInUserData } = useDoc(loggedInUserRef);
+  const isVendorLoggedIn = loggedInUserData?.userType === 'vendor';
 
   // --- Vendor Discovery State (When no vendorId is present) ---
   const vendorsProfilesQuery = useMemoFirebase(() => {
@@ -196,6 +206,7 @@ function MenuContent() {
                   reviewsCount: 0
                 } as FoodItem} 
                 onAddToCart={() => {}} 
+                hideAction={isVendorLoggedIn}
               />
             ))}
             {filteredItems.length === 0 && (

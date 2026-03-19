@@ -1,6 +1,7 @@
+
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +15,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function CartPage() {
   const [date, setDate] = useState<Date>();
@@ -21,6 +24,20 @@ export default function CartPage() {
   const { toast } = useToast();
   const router = useRouter();
   
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+  const { data: userData } = useDoc(userDocRef);
+
+  useEffect(() => {
+    if (userData?.userType === 'vendor') {
+      router.push('/');
+    }
+  }, [userData, router]);
+
   // Initialize with empty cart
   const [items, setItems] = useState<any[]>([]);
 
@@ -35,6 +52,10 @@ export default function CartPage() {
     });
     router.push('/orders');
   };
+
+  if (isUserLoading || userData?.userType === 'vendor') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-secondary/20">

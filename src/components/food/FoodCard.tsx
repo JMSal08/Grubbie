@@ -12,9 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 interface FoodCardProps {
   item: FoodItem;
   onAddToCart: (item: FoodItem) => void;
+  hideAction?: boolean;
 }
 
-export function FoodCard({ item, onAddToCart }: FoodCardProps) {
+export function FoodCard({ item, onAddToCart, hideAction = false }: FoodCardProps) {
   const { toast } = useToast();
 
   const handleAdd = () => {
@@ -64,12 +65,14 @@ export function FoodCard({ item, onAddToCart }: FoodCardProps) {
           </div>
         </div>
       </CardContent>
-      <CardFooter className="p-4 pt-0">
-        <Button onClick={handleAdd} className="w-full gap-2 rounded-full font-semibold">
-          <Plus className="h-4 w-4" />
-          Pre-order Now
-        </Button>
-      </CardFooter>
+      {!hideAction && (
+        <CardFooter className="p-4 pt-0">
+          <Button onClick={handleAdd} className="w-full gap-2 rounded-full font-semibold">
+            <Plus className="h-4 w-4" />
+            Pre-order Now
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 }

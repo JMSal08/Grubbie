@@ -53,6 +53,8 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
     });
   };
 
+  const isVendor = userData?.userType === 'vendor';
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
@@ -81,16 +83,18 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
             />
           </div>
           
-          <Button variant="ghost" size="icon" asChild className="relative">
-            <Link href="/cart">
-              <ShoppingCart className="h-5 w-5" />
-              {cartCount > 0 && (
-                <Badge className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full p-0 text-[10px]" variant="default">
-                  {cartCount}
-                </Badge>
-              )}
-            </Link>
-          </Button>
+          {!isVendor && (
+            <Button variant="ghost" size="icon" asChild className="relative">
+              <Link href="/cart">
+                <ShoppingCart className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <Badge className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full p-0 text-[10px]" variant="default">
+                    {cartCount}
+                  </Badge>
+                )}
+              </Link>
+            </Button>
+          )}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
