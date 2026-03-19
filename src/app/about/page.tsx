@@ -112,9 +112,6 @@ export default function AboutPage() {
               <a href="/menu" className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold hover:bg-primary/90 transition-colors">
                 Order Your First Meal
               </a>
-              <a href="/auth/signup" className="bg-white border-2 border-accent text-accent px-8 py-4 rounded-full font-bold hover:bg-accent hover:text-white transition-colors">
-                Create an Account
-              </a>
             </div>
           </div>
         </section>
