@@ -8,18 +8,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useAuth, useFirestore, useUser } from '@/firebase';
-import { initiateEmailSignUp } from '@/firebase/non-blocking-login';
+import { initiateEmailSignUp, initiateEmailVerification } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Mail, CheckCircle2 } from 'lucide-react';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [userType, setUserType] = useState('customer');
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationSent, setVerificationSent] = useState(false);
   const auth = useAuth();
   const db = useFirestore();
   const { user } = useUser();
@@ -27,8 +29,8 @@ export default function SignupPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user && isLoading) {
-      // Create User document in Firestore
+    if (user && isLoading && !verificationSent) {
+      // 1. Create User document in Firestore
       const userRef = doc(db, 'users', user.uid);
       setDocumentNonBlocking(userRef, {
         id: user.uid,
@@ -39,7 +41,20 @@ export default function SignupPage() {
         isBlocked: false,
       }, { merge: true });
 
-      // Create Profile document based on type
+      // 2. Send verification email
+      initiateEmailVerification(user).then(() => {
+        setVerificationSent(true);
+        setIsLoading(false);
+        toast({
+          title: "Verification Email Sent",
+          description: "Please check your inbox to verify your account.",
+        });
+      }).catch((err) => {
+        console.error("Verification error:", err);
+        setIsLoading(false);
+      });
+
+      // 3. Create Profile document based on type
       if (userType === 'customer') {
         const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
         setDocumentNonBlocking(customerRef, {
@@ -50,14 +65,9 @@ export default function SignupPage() {
           phoneNumber: '',
           lastLoginAt: serverTimestamp(),
         }, { merge: true });
-        router.push('/');
-      } else if (userType === 'vendor') {
-        // For vendors, we do NOT create the profile stub here.
-        // They are redirected to the setup page where the profile is created upon completion.
-        router.push('/vendor/setup');
       }
     }
-  }, [user, isLoading, db, userType, router, email]);
+  }, [user, isLoading, db, userType, email, verificationSent, toast]);
 
   const handleSignup = (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +81,38 @@ export default function SignupPage() {
       });
     });
   };
+
+  if (verificationSent) {
+    return (
+      <div className="min-h-screen bg-secondary/20 flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center p-4">
+          <Card className="w-full max-w-md border-none shadow-xl text-center p-8 space-y-6">
+            <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto text-primary">
+              <Mail className="h-10 w-10" />
+            </div>
+            <div className="space-y-2">
+              <CardTitle className="text-3xl font-headline font-bold">Check Your Email</CardTitle>
+              <CardDescription className="text-lg">
+                We've sent a verification link to <span className="font-bold text-foreground">{email}</span>
+              </CardDescription>
+            </div>
+            <p className="text-muted-foreground leading-relaxed">
+              Please click the link in the email to verify your identity. Once verified, you can skip the lines and enjoy your Grubbie favorites.
+            </p>
+            <div className="pt-4 space-y-3">
+              <Button className="w-full h-12 rounded-full font-bold text-lg shadow-lg" asChild>
+                <Link href="/auth/login">Back to Login</Link>
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                Didn't receive the email? Check your spam folder or try logging in to resend.
+              </p>
+            </div>
+          </Card>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-secondary/20">
