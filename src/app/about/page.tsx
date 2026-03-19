@@ -106,7 +106,7 @@ export default function AboutPage() {
           <div className="bg-primary/10 rounded-[3rem] p-12 md:p-20">
             <h2 className="text-3xl md:text-5xl font-headline font-bold text-accent mb-6">Ready to skip the line?</h2>
             <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-              Join thousands of students and staff who are already enjoying a faster way to dine on campus.
+              Join Grubbie today!
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <a href="/menu" className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold hover:bg-primary/90 transition-colors">
