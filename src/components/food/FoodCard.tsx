@@ -2,23 +2,22 @@
 "use client";
 
 import Image from 'next/image';
-import { Star, Plus, Clock } from 'lucide-react';
+import { Star, Plus, Clock, Edit2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FoodItem } from '@/lib/types';
+import Link from 'next/link';
 
 interface FoodCardProps {
   item: FoodItem;
-  onAddToCart: (item: FoodItem) => void;
+  onAddToCart?: (item: FoodItem) => void;
+  onDelete?: (item: FoodItem) => void;
+  isOwner?: boolean;
   hideAction?: boolean;
 }
 
-export function FoodCard({ item, onAddToCart, hideAction = false }: FoodCardProps) {
-  const handleAdd = () => {
-    onAddToCart(item);
-  };
-
+export function FoodCard({ item, onAddToCart, onDelete, isOwner = false, hideAction = false }: FoodCardProps) {
   return (
     <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-none bg-card">
       <div className="relative aspect-[4/3] overflow-hidden">
@@ -46,7 +45,7 @@ export function FoodCard({ item, onAddToCart, hideAction = false }: FoodCardProp
         <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
           <div className="flex items-center gap-1">
             <Star className="h-3 w-3 fill-primary text-primary" />
-            <span>{item.rating} ({item.reviewsCount})</span>
+            <span>{item.rating || 0} ({item.reviewsCount || 0})</span>
           </div>
           <div className="flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -59,11 +58,30 @@ export function FoodCard({ item, onAddToCart, hideAction = false }: FoodCardProp
         </div>
       </CardContent>
       {!hideAction && (
-        <CardFooter className="p-4 pt-0">
-          <Button onClick={handleAdd} className="w-full gap-2 rounded-full font-semibold">
-            <Plus className="h-4 w-4" />
-            Pre-order Now
-          </Button>
+        <CardFooter className="p-4 pt-0 gap-2">
+          {isOwner ? (
+            <>
+              <Button variant="outline" size="sm" asChild className="flex-1 gap-2 rounded-full font-semibold border-primary text-primary hover:bg-primary hover:text-white">
+                <Link href={`/vendor/edit-item/${item.id}`}>
+                  <Edit2 className="h-4 w-4" />
+                  Edit
+                </Link>
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => onDelete?.(item)}
+                className="rounded-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground px-3"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </>
+          ) : (
+            <Button onClick={() => onAddToCart?.(item)} className="w-full gap-2 rounded-full font-semibold">
+              <Plus className="h-4 w-4" />
+              Pre-order Now
+            </Button>
+          )}
         </CardFooter>
       )}
     </Card>

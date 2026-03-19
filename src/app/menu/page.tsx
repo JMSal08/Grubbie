@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, Suspense } from 'react';
@@ -6,7 +7,7 @@ import { Navbar } from '@/components/layout/Navbar';
 import { VendorCard } from '@/components/vendor/VendorCard';
 import { FoodCard } from '@/components/food/FoodCard';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Search, Loader2, ArrowLeft, Store, MapPin, Info } from 'lucide-react';
+import { Search, Loader2, ArrowLeft, Store, MapPin, Info, PlusCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +15,18 @@ import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from '@
 import { collectionGroup, query, collection, where, doc } from 'firebase/firestore';
 import { Vendor, FoodItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function MenuContent() {
   const searchParams = useSearchParams();
@@ -22,10 +35,14 @@ function MenuContent() {
   const vendorId = searchParams.get('vendor');
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('Cafeteria');
+  const [itemToDelete, setItemToDelete] = useState<FoodItem | null>(null);
+  
   const db = useFirestore();
   const { user } = useUser();
 
-  // Current logged in user info to check if they are a vendor
+  // Current logged in user info to check if they are the owner
+  const isOwner = user && vendorId && user.uid === vendorId;
+
   const loggedInUserRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -33,7 +50,7 @@ function MenuContent() {
   const { data: loggedInUserData } = useDoc(loggedInUserRef);
   const isVendorLoggedIn = loggedInUserData?.userType === 'vendor';
 
-  // --- Vendor Discovery State (When no vendorId is present) ---
+  // --- Vendor Discovery State ---
   const vendorsProfilesQuery = useMemoFirebase(() => {
     if (!db || vendorId) return null;
     return query(collectionGroup(db, 'vendorProfile'));
@@ -47,7 +64,7 @@ function MenuContent() {
   const { data: profilesData, isLoading: profilesLoading } = useCollection(vendorsProfilesQuery);
   const { data: usersData, isLoading: usersLoading } = useCollection(usersQuery);
 
-  // --- Storefront State (When vendorId IS present) ---
+  // --- Storefront State ---
   const specificVendorRef = useMemoFirebase(() => {
     if (!db || !vendorId) return null;
     return doc(db, 'users', vendorId, 'vendorProfile', 'profile');
@@ -55,12 +72,16 @@ function MenuContent() {
 
   const menuItemsQuery = useMemoFirebase(() => {
     if (!db || !vendorId) return null;
+    // Owners see all their items, customers only see available ones
+    if (isOwner) {
+      return query(collection(db, 'menuItems'), where('vendorId', '==', vendorId));
+    }
     return query(
       collection(db, 'menuItems'), 
       where('vendorId', '==', vendorId),
       where('isAvailable', '==', true)
     );
-  }, [db, vendorId]);
+  }, [db, vendorId, isOwner]);
 
   const { data: vendorProfile, isLoading: isVendorLoading } = useDoc(specificVendorRef);
   const { data: menuItems, isLoading: isMenuLoading } = useCollection(menuItemsQuery);
@@ -136,6 +157,17 @@ function MenuContent() {
     });
   };
 
+  const handleDeleteItem = () => {
+    if (!itemToDelete) return;
+    const itemRef = doc(db, 'menuItems', itemToDelete.id);
+    deleteDocumentNonBlocking(itemRef);
+    toast({
+      title: "Item Removed",
+      description: `${itemToDelete.name} has been deleted from your storefront.`,
+    });
+    setItemToDelete(null);
+  };
+
   const isLoading = profilesLoading || usersLoading || isVendorLoading || isMenuLoading;
 
   // Render Storefront View
@@ -206,10 +238,20 @@ function MenuContent() {
         {/* Menu Items */}
         <main className="container mx-auto px-4 py-12">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
-            <h2 className="text-3xl font-headline font-bold text-accent flex items-center gap-3">
-              <Store className="h-8 w-8 text-primary" />
-              Menu
-            </h2>
+            <div className="flex items-center gap-4">
+              <h2 className="text-3xl font-headline font-bold text-accent flex items-center gap-3">
+                <Store className="h-8 w-8 text-primary" />
+                Menu
+              </h2>
+              {isOwner && (
+                <Button size="sm" asChild className="rounded-full gap-2 h-10 px-6 font-bold">
+                  <Link href="/vendor/add-item">
+                    <PlusCircle className="h-4 w-4" />
+                    Add Item
+                  </Link>
+                </Button>
+              )}
+            </div>
             <div className="relative w-full md:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
@@ -228,11 +270,13 @@ function MenuContent() {
                 item={{
                   ...item,
                   category: item.menuTypeId === 'cafeteria' ? 'Cafeteria' : item.menuTypeId === 'southpoint' ? 'SouthPoint' : 'Other',
-                  rating: 0,
-                  reviewsCount: 0
+                  rating: item.rating || 0,
+                  reviewsCount: item.reviewsCount || 0
                 } as FoodItem} 
-                onAddToCart={handleAddToCart} 
-                hideAction={isVendorLoggedIn}
+                onAddToCart={handleAddToCart}
+                onDelete={(item) => setItemToDelete(item)}
+                isOwner={isOwner === true}
+                hideAction={isVendorLoggedIn && !isOwner}
               />
             ))}
             {filteredItems.length === 0 && (
@@ -242,6 +286,23 @@ function MenuContent() {
             )}
           </div>
         </main>
+
+        <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+          <AlertDialogContent className="rounded-3xl">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete {itemToDelete?.name}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove this item from your storefront. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteItem} className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete Item
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }

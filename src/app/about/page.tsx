@@ -9,10 +9,10 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AboutPage() {
   const creators = [
-    { name: "Jan Michael", role: "Lead Developer", image: PlaceHolderImages.find(img => img.id === 'creator-1') },
-    { name: "Sarah Chen", role: "UI Designer", image: PlaceHolderImages.find(img => img.id === 'creator-2') },
-    { name: "Robert Santos", role: "Backend Engineer", image: PlaceHolderImages.find(img => img.id === 'creator-3') },
-    { name: "Elena Cruz", role: "Product Manager", image: PlaceHolderImages.find(img => img.id === 'creator-4') },
+    { name: "Jan Michael Renz Salcedo", role: "Lead Developer", image: PlaceHolderImages.find(img => img.id === 'creator-1') },
+    { name: "Dominique Luna", role: "UI Designer", image: PlaceHolderImages.find(img => img.id === 'creator-2') },
+    { name: "Kendrick Malonzo", role: "Backend Engineer", image: PlaceHolderImages.find(img => img.id === 'creator-3') },
+    { name: "Marion James Dapiawen", role: "Product Manager", image: PlaceHolderImages.find(img => img.id === 'creator-4') },
   ];
 
   const diningImage = PlaceHolderImages.find(img => img.id === 'about-dining');
