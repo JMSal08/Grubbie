@@ -83,7 +83,7 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
             />
           </div>
           
-          {!isVendor && (
+          {user && !isVendor && (
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />

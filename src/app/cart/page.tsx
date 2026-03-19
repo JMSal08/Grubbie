@@ -33,6 +33,12 @@ export default function CartPage() {
   const { data: userData } = useDoc(userDocRef);
 
   useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/auth/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  useEffect(() => {
     if (userData?.userType === 'vendor') {
       router.push('/');
     }
@@ -53,7 +59,7 @@ export default function CartPage() {
     router.push('/orders');
   };
 
-  if (isUserLoading || userData?.userType === 'vendor') {
+  if (isUserLoading || !user || userData?.userType === 'vendor') {
     return null;
   }
 

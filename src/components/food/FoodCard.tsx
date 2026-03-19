@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FoodItem } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
 
 interface FoodCardProps {
   item: FoodItem;
@@ -16,14 +15,8 @@ interface FoodCardProps {
 }
 
 export function FoodCard({ item, onAddToCart, hideAction = false }: FoodCardProps) {
-  const { toast } = useToast();
-
   const handleAdd = () => {
     onAddToCart(item);
-    toast({
-      title: "Added to cart",
-      description: `${item.name} added successfully!`,
-    });
   };
 
   return (

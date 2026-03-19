@@ -14,10 +14,12 @@ import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection, useDoc, useMemoFirebase, useUser } from '@/firebase';
 import { collectionGroup, query, collection, where, doc } from 'firebase/firestore';
 import { Vendor, FoodItem } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 function MenuContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { toast } = useToast();
   const vendorId = searchParams.get('vendor');
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('Cafeteria');
@@ -108,6 +110,23 @@ function MenuContent() {
 
   const handleBack = () => {
     router.push('/menu');
+  };
+
+  const handleAddToCart = (item: FoodItem) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please sign in to start pre-ordering your favorites.",
+      });
+      router.push('/auth/login');
+      return;
+    }
+    
+    // Logic for actual cart addition would go here (e.g. local state or Firestore)
+    toast({
+      title: "Added to cart",
+      description: `${item.name} has been added to your order.`,
+    });
   };
 
   const isLoading = profilesLoading || usersLoading || isVendorLoading || isMenuLoading;
@@ -205,7 +224,7 @@ function MenuContent() {
                   rating: 0,
                   reviewsCount: 0
                 } as FoodItem} 
-                onAddToCart={() => {}} 
+                onAddToCart={handleAddToCart} 
                 hideAction={isVendorLoggedIn}
               />
             ))}
