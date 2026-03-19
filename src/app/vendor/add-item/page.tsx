@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -9,13 +8,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils, Clock } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils } from 'lucide-react';
 import Link from 'next/link';
 import { FoodCard } from '@/components/food/FoodCard';
 import { FoodItem } from '@/lib/types';
@@ -296,17 +294,6 @@ export default function AddItemPage() {
                         onChange={handleFileUpload} 
                       />
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl border">
-                    <div className="space-y-0.5">
-                      <Label className="text-sm font-bold">Immediate Availability</Label>
-                      <p className="text-xs text-muted-foreground">Show this item on your menu right away</p>
-                    </div>
-                    <Switch 
-                      checked={formData.isAvailable} 
-                      onCheckedChange={(val) => setFormData(prev => ({ ...prev, isAvailable: val }))}
-                    />
                   </div>
                 </div>
               </CardContent>
