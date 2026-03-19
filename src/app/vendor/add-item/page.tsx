@@ -49,6 +49,13 @@ export default function AddItemPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
+    
+    // Limit price to 2 decimal places
+    if (name === 'price') {
+      const regex = /^\d*\.?\d{0,2}$/;
+      if (value !== '' && !regex.test(value)) return;
+    }
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 

@@ -57,6 +57,12 @@ export default function VendorSetupPage() {
   };
 
   const handleMenuItemChange = (index: number, field: keyof NewMenuItem, value: string) => {
+    // Limit price to 2 decimal places
+    if (field === 'price') {
+      const regex = /^\d*\.?\d{0,2}$/;
+      if (value !== '' && !regex.test(value)) return;
+    }
+    
     const updatedItems = [...menuItems];
     updatedItems[index] = { ...updatedItems[index], [field]: value };
     setMenuItems(updatedItems);
