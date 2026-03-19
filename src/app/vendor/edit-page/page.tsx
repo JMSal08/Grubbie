@@ -13,7 +13,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, serverTimestamp } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { Store, Save, Loader2, ArrowLeft, Image as ImageIcon, Layout } from 'lucide-react';
+import { Store, Save, Loader2, ArrowLeft, Image as ImageIcon, Layout, Upload } from 'lucide-react';
 import { VendorCard } from '@/components/vendor/VendorCard';
 import { Vendor } from '@/lib/types';
 import Link from 'next/link';
@@ -48,6 +48,34 @@ export default function VendorEditPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev: any) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Firestore has a 1MB limit per document. 
+    // Base64 encoding increases file size by ~33%.
+    // Setting a limit of 700KB ensures the document stays within Firestore's limits.
+    if (file.size > 700 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please upload an image smaller than 700KB to ensure it can be saved.",
+      });
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setFormData((prev: any) => ({ ...prev, logoUrl: dataUrl }));
+      toast({
+        title: "Image Processed",
+        description: "Preview updated with your uploaded file.",
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -133,19 +161,54 @@ export default function VendorEditPage() {
                   />
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <Label htmlFor="logoUrl" className="flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" /> Shop Banner URL
+                    <ImageIcon className="h-4 w-4" /> Shop Banner
                   </Label>
-                  <Input 
-                    id="logoUrl" 
-                    name="logoUrl"
-                    value={formData.logoUrl || ''} 
-                    onChange={handleInputChange} 
-                    placeholder="https://images.unsplash.com/..."
-                    className="rounded-xl h-12" 
-                  />
-                  <p className="text-[10px] text-muted-foreground">Provide a high-quality image URL for your store's banner.</p>
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="logoUrl" className="text-xs text-muted-foreground">Image URL</Label>
+                      <Input 
+                        id="logoUrl" 
+                        name="logoUrl"
+                        value={formData.logoUrl || ''} 
+                        onChange={handleInputChange} 
+                        placeholder="https://images.unsplash.com/..."
+                        className="rounded-xl h-12" 
+                      />
+                    </div>
+                    
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-border" />
+                      </div>
+                      <div className="relative flex justify-center text-[10px] uppercase">
+                        <span className="bg-card px-2 text-muted-foreground font-bold tracking-widest">OR UPLOAD FILE</span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-2">
+                      <Label 
+                        htmlFor="bannerUpload" 
+                        className="flex flex-col items-center justify-center border-2 border-dashed rounded-xl p-8 cursor-pointer hover:bg-secondary/20 transition-all gap-2 group"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                          <Upload className="h-6 w-6 text-primary" />
+                        </div>
+                        <span className="font-bold text-sm">Choose an image file</span>
+                        <span className="text-[10px] text-muted-foreground">JPG, PNG or WEBP (Max 700KB)</span>
+                      </Label>
+                      <Input 
+                        id="bannerUpload" 
+                        type="file" 
+                        accept="image/*"
+                        className="hidden" 
+                        onChange={handleFileUpload}
+                      />
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Provide a high-quality image URL or upload a file for your store's banner.</p>
                 </div>
 
                 <div className="space-y-2">
@@ -161,7 +224,7 @@ export default function VendorEditPage() {
                 </div>
               </CardContent>
               <CardFooter className="bg-secondary/20 p-6 flex justify-end">
-                <Button type="submit" className="rounded-full gap-2 px-8 h-12 font-bold" disabled={isSaving}>
+                <Button type="submit" className="rounded-full gap-2 px-8 h-12 font-bold shadow-md" disabled={isSaving}>
                   {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                   Save Storefront
                 </Button>
@@ -184,8 +247,8 @@ export default function VendorEditPage() {
             <Card className="border-none shadow-sm bg-primary/5">
               <CardContent className="p-6">
                 <h4 className="font-bold text-sm mb-2">Pro Tip!</h4>
-                <p className="text-sm text-muted-foreground">
-                  Use bright, appetizing photos for your banner to attract more customers. High-contrast images with your best-selling dish work best!
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Use bright, appetizing photos for your banner to attract more customers. High-contrast images with your best-selling dish work best for mobile users!
                 </p>
               </CardContent>
             </Card>
