@@ -1,11 +1,22 @@
+
 "use client";
 
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Utensils, Clock, ShieldCheck, Heart, Users, Lightbulb } from 'lucide-react';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function AboutPage() {
+  const creators = [
+    { name: "Jan Michael", role: "Lead Developer", image: PlaceHolderImages.find(img => img.id === 'creator-1') },
+    { name: "Sarah Chen", role: "UI Designer", image: PlaceHolderImages.find(img => img.id === 'creator-2') },
+    { name: "Robert Santos", role: "Backend Engineer", image: PlaceHolderImages.find(img => img.id === 'creator-3') },
+    { name: "Elena Cruz", role: "Product Manager", image: PlaceHolderImages.find(img => img.id === 'creator-4') },
+  ];
+
+  const diningImage = PlaceHolderImages.find(img => img.id === 'about-dining');
+
   return (
     <div className="min-h-screen bg-secondary/10">
       <Navbar />
@@ -57,10 +68,36 @@ export default function AboutPage() {
             </div>
             <div className="relative aspect-video rounded-3xl overflow-hidden shadow-2xl">
               <img 
-                src="https://picsum.photos/seed/about1/800/600" 
-                alt="Students dining" 
+                src={diningImage?.imageUrl} 
+                alt={diningImage?.description} 
                 className="object-cover w-full h-full"
+                data-ai-hint={diningImage?.imageHint}
               />
+            </div>
+          </div>
+        </section>
+
+        {/* Creators Section */}
+        <section className="py-20 bg-accent/5">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl font-headline font-bold text-accent mb-12">The Minds Behind Grubbie</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {creators.map((creator, index) => (
+                <div key={index} className="space-y-4">
+                  <div className="relative aspect-square rounded-3xl overflow-hidden shadow-lg group">
+                    <img 
+                      src={creator.image?.imageUrl} 
+                      alt={creator.name} 
+                      className="object-cover w-full h-full transition-transform group-hover:scale-110"
+                      data-ai-hint={creator.image?.imageHint}
+                    />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-lg">{creator.name}</h4>
+                    <p className="text-sm text-muted-foreground">{creator.role}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </section>
