@@ -95,8 +95,10 @@ export default function VendorDashboard() {
             </div>
             
             <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <Button className="rounded-full gap-2 flex-1 sm:flex-none">
-                <Plus className="h-4 w-4" /> Add Item
+              <Button className="rounded-full gap-2 flex-1 sm:flex-none" asChild>
+                <Link href="/vendor/add-item">
+                  <Plus className="h-4 w-4" /> Add Item
+                </Link>
               </Button>
               <Button variant="outline" className="rounded-full gap-2 border-primary text-primary flex-1 sm:flex-none" asChild>
                 <Link href="/vendor/edit-page">
@@ -161,7 +163,7 @@ export default function VendorDashboard() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Active Orders */}
+          {/* Live Orders */}
           <Card className="lg:col-span-2 border-none shadow-md overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
               <div>
