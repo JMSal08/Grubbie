@@ -13,7 +13,7 @@ import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { collection, doc, serverTimestamp } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Loader2, Image as ImageIcon, Upload, Utensils, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { FoodCard } from '@/components/food/FoodCard';
 import { FoodItem } from '@/lib/types';
@@ -36,7 +36,6 @@ export default function AddItemPage() {
     description: '',
     price: '',
     imageUrl: '',
-    isAvailable: true,
     preparationTime: '15',
     preparationTimeUnit: 'mins',
   });
@@ -115,7 +114,7 @@ export default function AddItemPage() {
       price: parseFloat(formData.price),
       menuTypeId: vendorCategory,
       imageUrl: formData.imageUrl || 'https://picsum.photos/seed/food/600/400',
-      isAvailable: formData.isAvailable,
+      isAvailable: true,
       preparationTime: parseInt(formData.preparationTime) || 15,
       preparationTimeUnit: formData.preparationTimeUnit,
       createdAt: serverTimestamp(),
@@ -152,7 +151,7 @@ export default function AddItemPage() {
     imageUrl: formData.imageUrl || 'https://picsum.photos/seed/food/600/400',
     rating: 0,
     reviewsCount: 0,
-    preparationTime: parseInt(formData.preparationTime) || 0,
+    preparationTime: parseInt(formData.preparationTime) || 15,
     preparationTimeUnit: formData.preparationTimeUnit as any
   };
 
@@ -319,7 +318,7 @@ export default function AddItemPage() {
             
             <div className="max-w-xs mx-auto">
               <p className="text-xs text-muted-foreground mb-4 text-center italic">This is how customers will see your dish.</p>
-              <FoodCard item={previewItem} onAddToCart={() => {}} />
+              <FoodCard item={previewItem} onAddToCart={() => {}} hideAction={true} />
             </div>
 
             <Card className="border-none shadow-sm bg-accent text-accent-foreground p-6 rounded-3xl">

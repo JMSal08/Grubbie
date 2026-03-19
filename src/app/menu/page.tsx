@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, Suspense } from 'react';
@@ -121,8 +120,16 @@ function MenuContent() {
       router.push('/auth/login');
       return;
     }
+
+    if (isVendorLoggedIn) {
+      toast({
+        variant: "destructive",
+        title: "Action Restricted",
+        description: "Vendors cannot place orders.",
+      });
+      return;
+    }
     
-    // Logic for actual cart addition would go here (e.g. local state or Firestore)
     toast({
       title: "Added to cart",
       description: `${item.name} has been added to your order.`,

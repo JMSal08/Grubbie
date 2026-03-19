@@ -6,7 +6,6 @@ service cloud.firestore {
      * CORE PHILOSOPHY
      * This ruleset enforces a strict ownership and role-based access model for the Grubbie application. 
      * It leverages denormalization to ensure authorization is fast and independent.
-     * Crucially, users must have a verified email to perform most actions.
      */
 
     // --- Helper Functions ---
@@ -35,18 +34,29 @@ service cloud.firestore {
       return isEmailVerified() && (request.auth.uid == orderData.customerId || request.auth.uid == orderData.vendorId);
     }
 
+    // --- Collection Group Rules ---
+    
+    // Explicitly allow collection group queries for vendor discovery
+    match /{path=**}/vendorProfile/{profileId} {
+      allow read: if true;
+    }
+
+    match /{path=**}/customerProfile/{profileId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+    }
+
     // --- Collection Rules ---
 
     /**
      * @description Rules for the top-level User documents.
      */
     match /users/{userId} {
-      // Allow reading other users if the requester is signed in (needed for social features/discovery)
-      // Note: We allow unverified users to read their own basic User document to check their role.
+      // Allow reading other users if the requester is signed in.
+      // Vendors are publicly visible.
       allow get: if isOwner(userId) || isEmailVerified() || (resource.data.userType == 'vendor');
       allow list: if isEmailVerified() || (resource.data.userType == 'vendor');
       
-      // Allow creation during signup, even if not yet verified
+      // Allow creation during signup
       allow create: if isOwner(userId);
       allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
       allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
@@ -55,7 +65,9 @@ service cloud.firestore {
        * @description Subcollection for Customer-specific profile data.
        */
       match /customerProfile/{profileId} {
-        allow get, list: if (isOwner(userId) && isEmailVerified()) || isAdmin();
+        // Relax get permission to allow the login check for unverified owners
+        allow get: if isOwner(userId) || isAdmin();
+        allow list: if (isOwner(userId) && isEmailVerified()) || isAdmin();
         allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
         allow update: if isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
