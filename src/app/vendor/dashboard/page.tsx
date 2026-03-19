@@ -98,8 +98,10 @@ export default function VendorDashboard() {
               <Button className="rounded-full gap-2 flex-1 sm:flex-none">
                 <Plus className="h-4 w-4" /> Add Item
               </Button>
-              <Button variant="outline" className="rounded-full gap-2 border-primary text-primary flex-1 sm:flex-none">
-                <Edit className="h-4 w-4" /> Edit Page
+              <Button variant="outline" className="rounded-full gap-2 border-primary text-primary flex-1 sm:flex-none" asChild>
+                <Link href="/vendor/edit-page">
+                  <Edit className="h-4 w-4" /> Edit Page
+                </Link>
               </Button>
               <Button variant="outline" className="rounded-full gap-2 border-accent text-accent flex-1 sm:flex-none" asChild>
                 <Link href="/profile">
