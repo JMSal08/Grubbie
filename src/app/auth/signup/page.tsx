@@ -14,7 +14,7 @@ import { doc, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Mail, CheckCircle2 } from 'lucide-react';
+import { Mail } from 'lucide-react';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -25,12 +25,12 @@ export default function SignupPage() {
   const auth = useAuth();
   const db = useFirestore();
   const { user } = useUser();
-  const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
     if (user && isLoading && !verificationSent) {
-      // 1. Create User document in Firestore
+      // Create User document in Firestore immediately to store the selected role (userType)
+      // This document acts as a "pending" account until verification.
       const userRef = doc(db, 'users', user.uid);
       setDocumentNonBlocking(userRef, {
         id: user.uid,
@@ -41,7 +41,7 @@ export default function SignupPage() {
         isBlocked: false,
       }, { merge: true });
 
-      // 2. Send verification email
+      // Send verification email
       initiateEmailVerification(user).then(() => {
         setVerificationSent(true);
         setIsLoading(false);
@@ -53,19 +53,8 @@ export default function SignupPage() {
         console.error("Verification error:", err);
         setIsLoading(false);
       });
-
-      // 3. Create Profile document based on type
-      if (userType === 'customer') {
-        const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
-        setDocumentNonBlocking(customerRef, {
-          id: 'profile',
-          userId: user.uid,
-          firstName: '',
-          lastName: '',
-          phoneNumber: '',
-          lastLoginAt: serverTimestamp(),
-        }, { merge: true });
-      }
+      
+      // We do NOT create profiles here. They are created on first login AFTER verification.
     }
   }, [user, isLoading, db, userType, email, verificationSent, toast]);
 
@@ -98,11 +87,11 @@ export default function SignupPage() {
               </CardDescription>
             </div>
             <p className="text-muted-foreground leading-relaxed">
-              Please click the link in the email to verify your identity. Once verified, you can skip the lines and enjoy your Grubbie favorites.
+              Please click the link in the email to verify your identity. Once verified, you can log in and enjoy your food favorites.
             </p>
             <div className="pt-4 space-y-3">
               <Button className="w-full h-12 rounded-full font-bold text-lg shadow-lg" asChild>
-                <Link href="/auth/login">Back to Login</Link>
+                <Link href="/auth/login">Go to Login</Link>
               </Button>
               <p className="text-xs text-muted-foreground">
                 Didn't receive the email? Check your spam folder or try logging in to resend.

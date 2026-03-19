@@ -5,14 +5,18 @@ service cloud.firestore {
     /**
      * CORE PHILOSOPHY
      * This ruleset enforces a strict ownership and role-based access model for the Grubbie application. 
-     * It leverages denormalization (storing IDs like vendorId and customerId directly on documents) 
-     * to ensure authorization is fast, independent, and does not require recursive 'get()' calls.
+     * It leverages denormalization to ensure authorization is fast and independent.
+     * Crucially, users must have a verified email to perform most actions.
      */
 
     // --- Helper Functions ---
 
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
     }
 
     function isOwner(userId) {
@@ -28,7 +32,7 @@ service cloud.firestore {
     }
 
     function isInvolvedInOrder(orderData) {
-      return isSignedIn() && (request.auth.uid == orderData.customerId || request.auth.uid == orderData.vendorId);
+      return isEmailVerified() && (request.auth.uid == orderData.customerId || request.auth.uid == orderData.vendorId);
     }
 
     // --- Collection Rules ---
@@ -37,41 +41,35 @@ service cloud.firestore {
      * @description Rules for the top-level User documents.
      */
     match /users/{userId} {
-      // Allow reading other users if the requester is signed in 
-      // OR if the document belongs to a vendor (needed for public menu discovery).
-      // We allow list operations for anyone as long as they are querying for vendors.
-      allow get, list: if isSignedIn() || (resource.data.userType == 'vendor');
+      // Allow reading other users if the requester is signed in (needed for social features/discovery)
+      // Note: We allow unverified users to read their own basic User document to check their role.
+      allow get: if isOwner(userId) || isEmailVerified() || (resource.data.userType == 'vendor');
+      allow list: if isEmailVerified() || (resource.data.userType == 'vendor');
       
+      // Allow creation during signup, even if not yet verified
       allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId) || isAdmin();
-      allow delete: if isOwner(userId) || isAdmin();
+      allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
+      allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
 
       /**
        * @description Subcollection for Customer-specific profile data.
        */
       match /customerProfile/{profileId} {
-        allow get, list: if isOwner(userId) || isAdmin();
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && request.resource.data.userId == userId;
-        allow delete: if isOwner(userId) || isAdmin();
+        allow get, list: if (isOwner(userId) && isEmailVerified()) || isAdmin();
+        allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
+        allow update: if isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
+        allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
 
       /**
-       * @description Subcollection for Vendor-specific profile data (Hierarchy access).
+       * @description Subcollection for Vendor-specific profile data.
        */
       match /vendorProfile/{profileId} {
         allow read: if true;
-        allow create: if isOwner(userId) && request.resource.data.userId == userId;
-        allow update: if (isExistingOwner(userId) && request.resource.data.userId == userId) || isAdmin();
-        allow delete: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId) || isAdmin();
+        allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
-    }
-
-    /**
-     * @description Collection Group match for Vendor discovery.
-     */
-    match /{path=**}/vendorProfile/{profileId} {
-      allow read: if true;
     }
 
     /**
@@ -84,7 +82,7 @@ service cloud.firestore {
     }
 
     /**
-     * @description Categories for food items (e.g., 'Cafeteria').
+     * @description Categories for food items.
      */
     match /menuTypes/{menuTypeId} {
       allow get, list: if true;
@@ -96,19 +94,18 @@ service cloud.firestore {
      */
     match /menuItems/{menuItemId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.vendorId == request.auth.uid;
-      allow update: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
-      allow delete: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow create: if isEmailVerified() && request.resource.data.vendorId == request.auth.uid;
+      allow update: if isEmailVerified() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow delete: if isEmailVerified() && (resource.data.vendorId == request.auth.uid || isAdmin());
     }
 
     /**
      * @description Customer pre-orders.
      */
     match /orders/{orderId} {
-      // Support list queries for customers and vendors separately to avoid engine logical complexity
       allow get: if (resource != null && isInvolvedInOrder(resource.data)) || isAdmin();
-      allow list: if (isSignedIn() && (resource.data.customerId == request.auth.uid || resource.data.vendorId == request.auth.uid)) || isAdmin();
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
+      allow list: if (isEmailVerified() && (resource.data.customerId == request.auth.uid || resource.data.vendorId == request.auth.uid)) || isAdmin();
+      allow create: if isEmailVerified() && request.resource.data.customerId == request.auth.uid;
       allow update: if resource != null && (isInvolvedInOrder(resource.data) || isAdmin());
       allow delete: if isAdmin();
 
@@ -123,18 +120,18 @@ service cloud.firestore {
      */
     match /reviews/{reviewId} {
       allow get, list: if true;
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-      allow update: if resource != null && (resource.data.customerId == request.auth.uid || isAdmin());
-      allow delete: if resource != null && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow create: if isEmailVerified() && request.resource.data.customerId == request.auth.uid;
+      allow update: if resource != null && isEmailVerified() && (resource.data.customerId == request.auth.uid || isAdmin());
+      allow delete: if resource != null && isEmailVerified() && (resource.data.customerId == request.auth.uid || isAdmin());
     }
 
     /**
-     * @description Reports submitted by vendors against customer behavior.
+     * @description Reports submitted by vendors.
      */
     match /reports/{reportId} {
-      allow get: if (isSignedIn() && resource.data.reportingVendorId == request.auth.uid) || isAdmin();
+      allow get: if (isEmailVerified() && resource.data.reportingVendorId == request.auth.uid) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isSignedIn() && request.resource.data.reportingVendorId == request.auth.uid;
+      allow create: if isEmailVerified() && request.resource.data.reportingVendorId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
   }

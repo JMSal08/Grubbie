@@ -6,34 +6,97 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth, useUser } from '@/firebase';
-import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { useAuth, useUser, useFirestore } from '@/firebase';
+import { initiateEmailSignIn, initiateEmailVerification } from '@/firebase/non-blocking-login';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { signOut } from 'firebase/auth';
+import { doc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
+  const db = useFirestore();
   const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
   useEffect(() => {
-    // If user is already logged in or becomes logged in after form submission
-    if (user && !isLoading) {
-      router.push('/');
-    }
-  }, [user, isLoading, router]);
+    // System check for email verification and profile creation
+    const checkVerificationAndProfile = async () => {
+      if (user && !isLoading) {
+        if (!user.emailVerified) {
+          toast({
+            variant: "destructive",
+            title: "Email Not Verified",
+            description: "Please verify your email before logging in. We've sent you a link.",
+            action: (
+              <Button variant="outline" size="sm" onClick={() => initiateEmailVerification(user)}>
+                Resend
+              </Button>
+            ),
+          });
+          await signOut(auth);
+          return;
+        }
+
+        // Check if user document exists to determine if we need to initialize profile
+        const userRef = doc(db, 'users', user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          
+          // If verified but profile doesn't exist, create it now
+          if (userData.userType === 'customer') {
+            const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
+            const customerSnap = await getDoc(customerRef);
+            if (!customerSnap.exists()) {
+              setDocumentNonBlocking(customerRef, {
+                id: 'profile',
+                userId: user.uid,
+                firstName: '',
+                lastName: '',
+                phoneNumber: '',
+                lastLoginAt: serverTimestamp(),
+              }, { merge: true });
+            }
+          } else if (userData.userType === 'vendor') {
+            const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
+            const vendorSnap = await getDoc(vendorRef);
+            if (!vendorSnap.exists()) {
+              setDocumentNonBlocking(vendorRef, {
+                id: 'profile',
+                userId: user.uid,
+                vendorName: 'New Vendor',
+                description: '',
+                location: 'Cafeteria',
+                contactNumber: '',
+                openingTime: '08:00',
+                closingTime: '20:00',
+                lastLoginAt: serverTimestamp(),
+                isOnline: false,
+              }, { merge: true });
+            }
+          }
+          
+          router.push('/');
+        }
+      }
+    };
+
+    checkVerificationAndProfile();
+  }, [user, isLoading, auth, db, router, toast]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     initiateEmailSignIn(auth, email, password)
       .then(() => {
-        // Reset loading state so the useEffect can trigger the redirect
         setIsLoading(false);
       })
       .catch((error: any) => {
