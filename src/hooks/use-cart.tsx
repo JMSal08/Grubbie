@@ -1,8 +1,8 @@
-
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useMemo } from 'react';
 import { FoodItem, CartItem } from '@/lib/types';
+import { useUser } from '@/firebase';
 
 interface CartContextType {
   items: CartItem[];
@@ -17,24 +17,38 @@ interface CartContextType {
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { user } = useUser();
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load cart from localStorage on mount
+  // Storage key depends on user status to ensure isolation between users
+  const cartKey = useMemo(() => {
+    return user ? `grubbie_cart_${user.uid}` : 'grubbie_cart_guest';
+  }, [user]);
+
+  // Load cart from localStorage whenever the key changes (user logs in/out)
   useEffect(() => {
-    const savedCart = localStorage.getItem('grubbie_cart');
+    setIsLoaded(false);
+    const savedCart = localStorage.getItem(cartKey);
     if (savedCart) {
       try {
         setItems(JSON.parse(savedCart));
       } catch (e) {
         console.error("Failed to parse cart", e);
+        setItems([]);
       }
+    } else {
+      setItems([]);
     }
-  }, []);
+    setIsLoaded(true);
+  }, [cartKey]);
 
-  // Save cart to localStorage on change
+  // Save cart to localStorage on change, but only after initial load for that key
   useEffect(() => {
-    localStorage.setItem('grubbie_cart', JSON.stringify(items));
-  }, [items]);
+    if (isLoaded) {
+      localStorage.setItem(cartKey, JSON.stringify(items));
+    }
+  }, [items, cartKey, isLoaded]);
 
   const addItem = (foodItem: FoodItem) => {
     setItems((prev) => {
