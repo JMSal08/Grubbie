@@ -10,6 +10,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Badge } from '@/components/ui/badge';
 import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -21,7 +22,7 @@ import { useCart } from '@/hooks/use-cart';
 
 export default function CartPage() {
   const [date, setDate] = useState<Date>();
-  const [payment, setPayment] = useState('gcash');
+  const [payment, setPayment] = useState('cash');
   const { toast } = useToast();
   const router = useRouter();
   const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
@@ -179,20 +180,31 @@ export default function CartPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <Label className="text-sm font-bold">Payment Method</Label>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-bold">Payment Method</Label>
+                    <Badge variant="outline" className="text-[10px] uppercase font-bold text-muted-foreground bg-muted/50 border-none">
+                      Cash Only
+                    </Badge>
+                  </div>
                   <RadioGroup value={payment} onValueChange={setPayment} className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center space-x-3 rounded-xl border p-4 cursor-pointer hover:bg-secondary/20 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                      <RadioGroupItem value="gcash" id="gcash" />
-                      <Label htmlFor="gcash" className="flex-1 flex items-center gap-3 cursor-pointer">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                        <span className="font-bold">GCash</span>
+                    <div className="flex items-center space-x-3 rounded-xl border p-4 opacity-50 cursor-not-allowed bg-muted/10">
+                      <RadioGroupItem value="gcash" id="gcash" disabled />
+                      <Label htmlFor="gcash" className="flex-1 flex items-center justify-between cursor-not-allowed">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="h-5 w-5 text-muted-foreground" />
+                          <span className="font-bold text-muted-foreground">GCash</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-red-500 uppercase">Unavailable</span>
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 rounded-xl border p-4 cursor-pointer hover:bg-secondary/20 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
-                      <RadioGroupItem value="paymaya" id="paymaya" />
-                      <Label htmlFor="paymaya" className="flex-1 flex items-center gap-3 cursor-pointer">
-                        <CreditCard className="h-5 w-5 text-primary" />
-                        <span className="font-bold">PayMaya</span>
+                    <div className="flex items-center space-x-3 rounded-xl border p-4 opacity-50 cursor-not-allowed bg-muted/10">
+                      <RadioGroupItem value="paymaya" id="paymaya" disabled />
+                      <Label htmlFor="paymaya" className="flex-1 flex items-center justify-between cursor-not-allowed">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="h-5 w-5 text-muted-foreground" />
+                          <span className="font-bold text-muted-foreground">PayMaya</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-red-500 uppercase">Unavailable</span>
                       </Label>
                     </div>
                     <div className="flex items-center space-x-3 rounded-xl border p-4 cursor-pointer hover:bg-secondary/20 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
