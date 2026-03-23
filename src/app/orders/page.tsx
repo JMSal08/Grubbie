@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Clock, CheckCircle2, Package, ChefHat, History, LayoutList, Loader2, Info } from 'lucide-react';
+import { Clock, CheckCircle2, Package, ChefHat, History, LayoutList, Loader2, Info, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
@@ -135,15 +135,30 @@ export default function OrdersPage() {
                     </CardTitle>
                     <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                       <Clock className="h-3 w-3" />
-                      Scheduled: {format(new Date(order.scheduledPickupDateTime), 'MMM d, h:mm a')}
+                      Scheduled: {order.scheduledPickupDateTime ? format(new Date(order.scheduledPickupDateTime), 'MMM d, h:mm a') : 'Not scheduled'}
                     </div>
                   </div>
-                  <Badge variant={order.status === 'ready' ? 'default' : 'secondary'} className="rounded-full px-4 py-1 capitalize">
+                  <Badge 
+                    variant={order.status === 'ready' ? 'default' : order.status === 'cancelled' ? 'destructive' : 'secondary'} 
+                    className="rounded-full px-4 py-1 capitalize"
+                  >
                     {order.status}
                   </Badge>
                 </CardHeader>
                 <CardContent className="pt-6">
-                  {order.status !== 'cancelled' && (
+                  {order.status === 'cancelled' && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 items-start">
+                      <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="text-sm font-bold text-red-900 mb-1">Reason for Deletion</h5>
+                        <p className="text-sm text-red-800 leading-relaxed">
+                          {order.cancellationNote || "The vendor has cancelled this order without providing a specific reason."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {order.status !== 'cancelled' && order.status !== 'picked-up' && (
                     <div className="mb-8">
                       <div className="flex justify-between mb-4">
                         <div className="flex flex-col items-center gap-2">
@@ -189,7 +204,7 @@ export default function OrdersPage() {
                     </div>
                     <div className="text-[10px] text-muted-foreground flex justify-between uppercase font-bold mt-2">
                       <span>Method: {order.paymentMethod}</span>
-                      <span>Ordered: {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'h:mm a') : 'Recently'}</span>
+                      <span>Ordered: {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, h:mm a') : 'Recently'}</span>
                     </div>
                   </div>
                 </CardContent>
