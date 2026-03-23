@@ -8,6 +8,7 @@ export interface User {
   role: UserRole;
   isBlocked: boolean;
   avatar?: string;
+  userType?: string;
 }
 
 export type FoodCategory = 'Cafeteria' | 'SouthPoint' | 'Other';
@@ -37,6 +38,7 @@ export interface FoodItem {
   reviewsCount: number;
   preparationTime?: number;
   preparationTimeUnit?: 'mins' | 'hours';
+  menuTypeId?: string;
 }
 
 export interface CartItem extends FoodItem {
@@ -49,17 +51,23 @@ export interface Order {
   id: string;
   customerId: string;
   customerName: string;
+  vendorId: string;
+  vendorName: string;
   items: Array<{
     foodItemId: string;
     name: string;
     quantity: number;
     price: number;
   }>;
-  total: number;
+  totalAmount: number;
   status: OrderStatus;
-  scheduledFor?: string;
-  paymentMethod: 'gcash' | 'paymaya' | 'cash';
-  createdAt: string;
+  scheduledPickupDateTime: string;
+  orderDateTime: any;
+  paymentMethod: string;
+  paymentStatus: string;
+  cancellationNote?: string;
+  createdAt: any;
+  updatedAt: any;
 }
 
 export interface Review {

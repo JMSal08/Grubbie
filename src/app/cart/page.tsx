@@ -17,7 +17,7 @@ import { format, isSameDay, isBefore, startOfToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
 import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { useCart } from '@/hooks/use-cart';
 
@@ -50,12 +50,6 @@ export default function CartPage() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (userData?.userType === 'vendor') {
-      router.push('/');
-    }
-  }, [userData, router]);
-
   const isTimeInPast = useMemo(() => {
     if (!now || !date || !time) return false;
     if (!isSameDay(date, now)) return false;
@@ -73,7 +67,7 @@ export default function CartPage() {
     setIsSubmitting(true);
     
     try {
-      // Group items by vendor for multiple orders if needed
+      // Group items by vendor
       const vendorsInCart = Array.from(new Set(items.map(i => i.vendorId)));
       
       const scheduledDateTime = new Date(date);
@@ -98,7 +92,7 @@ export default function CartPage() {
           totalAmount: vendorTotal,
           paymentMethod: payment,
           paymentStatus: 'Pending',
-          orderStatus: 'pending',
+          status: 'pending',
           items: vendorItems.map(vi => ({
             foodItemId: vi.id,
             name: vi.name,
@@ -111,16 +105,19 @@ export default function CartPage() {
 
         setDocumentNonBlocking(orderRef, orderData, { merge: true });
 
-        // Also add items to subcollection per backend.json schema
+        // Add items to subcollection per backend.json schema
         const itemsCol = collection(db, 'orders', orderId, 'orderItems');
         vendorItems.forEach(item => {
-          addDocumentNonBlocking(itemsCol, {
+          const itemDocId = doc(itemsCol).id;
+          const itemDocRef = doc(itemsCol, itemDocId);
+          setDocumentNonBlocking(itemDocRef, {
+            id: itemDocId,
             orderId: orderId,
             menuItemId: item.id,
             quantity: item.quantity,
             priceAtOrder: item.price,
             notes: ''
-          });
+          }, { merge: true });
         });
       });
 
@@ -143,13 +140,17 @@ export default function CartPage() {
     }
   };
 
-  if (isUserLoading || !user || userData?.userType === 'vendor') {
-    return null;
+  if (isUserLoading || !user) {
+    return (
+      <div className="min-h-screen bg-secondary/20 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-secondary/20">
-      <Navbar cartCount={items.length} />
+      <Navbar />
       
       <main className="container mx-auto px-4 py-12 max-w-6xl">
         <h1 className="text-3xl font-headline font-bold text-accent mb-8">Your Cart</h1>

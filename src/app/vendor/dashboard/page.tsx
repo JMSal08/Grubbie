@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   BarChart3, 
   Package, 
@@ -20,20 +21,32 @@ import {
   Loader2,
   Power,
   Edit,
-  ChefHat
+  ChefHat,
+  X
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
-import { doc, serverTimestamp, query, collection, where, orderBy } from 'firebase/firestore';
+import { doc, serverTimestamp, query, collection, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Order } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function VendorDashboard() {
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const { toast } = useToast();
+  
+  const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
+  const [cancelNote, setCancelNote] = useState("");
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -63,10 +76,9 @@ export default function VendorDashboard() {
 
     const active = sorted.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
     
-    // Revenue for "today" - simplified for MVP
     const todayRevenue = orders
       .filter(o => o.status === 'picked-up')
-      .reduce((acc, o) => acc + o.totalAmount, 0);
+      .reduce((acc, o) => acc + (o.totalAmount || 0), 0);
 
     return {
       activeOrders: active,
@@ -91,17 +103,28 @@ export default function VendorDashboard() {
     });
   };
 
-  const updateOrderStatus = (orderId: string, status: string) => {
+  const updateOrderStatus = (orderId: string, status: string, note?: string) => {
     const orderRef = doc(db, 'orders', orderId);
-    updateDocumentNonBlocking(orderRef, {
+    const updateData: any = {
       status: status,
       updatedAt: serverTimestamp()
-    });
+    };
+    
+    if (note) {
+      updateData.cancellationNote = note;
+    }
+
+    updateDocumentNonBlocking(orderRef, updateData);
 
     toast({
       title: "Status Updated",
       description: `Order marked as ${status}.`,
     });
+    
+    if (status === 'cancelled') {
+      setCancellingOrder(null);
+      setCancelNote("");
+    }
   };
 
   if (isUserLoading || isProfileLoading || isOrdersLoading) {
@@ -151,11 +174,6 @@ export default function VendorDashboard() {
               <Button variant="outline" className="rounded-full gap-2 border-primary text-primary flex-1 sm:flex-none" asChild>
                 <Link href="/vendor/edit-page">
                   <Edit className="h-4 w-4" /> Edit Page
-                </Link>
-              </Button>
-              <Button variant="outline" className="rounded-full gap-2 border-accent text-accent flex-1 sm:flex-none" asChild>
-                <Link href="/profile">
-                  <Settings className="h-4 w-4" /> Settings
                 </Link>
               </Button>
             </div>
@@ -249,7 +267,7 @@ export default function VendorDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="text-xs">
-                            {order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                            {order.items?.map((item: any) => `${item.quantity}x ${item.name}`).join(', ')}
                           </div>
                           <div className="text-[10px] font-bold text-accent mt-1 uppercase tracking-tighter">
                             {order.paymentMethod} • ₱{order.totalAmount}
@@ -265,7 +283,7 @@ export default function VendorDashboard() {
                             {order.status === 'pending' && (
                               <Button 
                                 size="sm" 
-                                className="h-8 rounded-full text-[10px]"
+                                className="h-8 rounded-full text-[10px] bg-primary text-primary-foreground font-bold"
                                 onClick={() => updateOrderStatus(order.id, 'preparing')}
                               >
                                 Accept
@@ -274,7 +292,7 @@ export default function VendorDashboard() {
                             {order.status === 'preparing' && (
                               <Button 
                                 size="sm" 
-                                className="h-8 rounded-full text-[10px] bg-green-600 hover:bg-green-700"
+                                className="h-8 rounded-full text-[10px] bg-green-600 hover:bg-green-700 font-bold"
                                 onClick={() => updateOrderStatus(order.id, 'ready')}
                               >
                                 Ready
@@ -283,7 +301,7 @@ export default function VendorDashboard() {
                             {order.status === 'ready' && (
                               <Button 
                                 size="sm" 
-                                className="h-8 rounded-full text-[10px] bg-blue-600 hover:bg-blue-700"
+                                className="h-8 rounded-full text-[10px] bg-blue-600 hover:bg-blue-700 font-bold"
                                 onClick={() => updateOrderStatus(order.id, 'picked-up')}
                               >
                                 Complete
@@ -292,10 +310,10 @@ export default function VendorDashboard() {
                             <Button 
                               size="icon" 
                               variant="ghost" 
-                              className="h-8 w-8 rounded-full text-red-500"
-                              onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                              className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50"
+                              onClick={() => setCancellingOrder(order.id)}
                             >
-                              <AlertTriangle className="h-4 w-4" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -311,16 +329,17 @@ export default function VendorDashboard() {
           <div className="space-y-6">
             <Card className="border-none shadow-md overflow-hidden bg-white">
               <CardHeader className="bg-accent text-accent-foreground">
-                <CardTitle className="font-headline font-bold text-lg">Top Sellers</CardTitle>
+                <CardTitle className="font-headline font-bold text-lg">Quick Access</CardTitle>
               </CardHeader>
-              <CardContent className="p-6 space-y-6">
-                <div className="text-center py-10">
-                   <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                   <p className="text-xs text-muted-foreground">Performance data will appear as you fulfill more orders.</p>
-                </div>
-                <Button className="w-full rounded-full border-accent text-accent mt-4 h-12 font-bold" variant="outline" asChild>
+              <CardContent className="p-6 space-y-4">
+                <Button className="w-full rounded-full border-accent text-accent h-12 font-bold justify-between" variant="outline" asChild>
+                  <Link href={`/menu?vendor=${user.uid}`}>
+                    My Storefront <ChevronRight className="h-4 w-4" />
+                  </Link>
+                </Button>
+                <Button className="w-full rounded-full border-accent text-accent h-12 font-bold justify-between" variant="outline" asChild>
                   <Link href="/profile">
-                    Store Settings <ChevronRight className="h-4 w-4 ml-1" />
+                    Account Settings <ChevronRight className="h-4 w-4" />
                   </Link>
                 </Button>
               </CardContent>
@@ -328,6 +347,38 @@ export default function VendorDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Cancellation Dialog */}
+      <Dialog open={!!cancellingOrder} onOpenChange={(open) => !open && setCancellingOrder(null)}>
+        <DialogContent className="rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-red-600">Decline Order?</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for declining this order. The customer will see this note.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            <Label htmlFor="cancelNote">Reason (Optional)</Label>
+            <Input 
+              id="cancelNote" 
+              placeholder="e.g. Out of stock, Kitchen too busy..." 
+              value={cancelNote}
+              onChange={(e) => setCancelNote(e.target.value)}
+              className="rounded-xl h-12"
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="ghost" onClick={() => setCancellingOrder(null)} className="rounded-full">Keep Order</Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => cancellingOrder && updateOrderStatus(cancellingOrder, 'cancelled', cancelNote)}
+              className="rounded-full px-8 font-bold"
+            >
+              Confirm Decline
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
