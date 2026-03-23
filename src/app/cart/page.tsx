@@ -11,7 +11,8 @@ import { Label } from '@/components/ui/label';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +23,7 @@ import { useCart } from '@/hooks/use-cart';
 
 export default function CartPage() {
   const [date, setDate] = useState<Date>();
+  const [time, setTime] = useState<string>('');
   const [payment, setPayment] = useState('cash');
   const { toast } = useToast();
   const router = useRouter();
@@ -48,12 +50,12 @@ export default function CartPage() {
   }, [userData, router]);
 
   const handleCheckout = () => {
-    if (items.length === 0) return;
+    if (items.length === 0 || !date || !time) return;
     
     // In a real app, we'd add the order to Firestore here.
     toast({
       title: "Order Placed!",
-      description: `Your pre-order has been sent to the vendors.`,
+      description: `Your pre-order for ${format(date, "PPP")} at ${time} has been sent.`,
     });
     
     clearCart();
@@ -155,28 +157,39 @@ export default function CartPage() {
 
                 <div className="space-y-3">
                   <Label className="text-sm font-bold">Schedule Pickup</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal h-12 rounded-xl",
-                          !date && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {date ? format(date, "PPP") : <span>Select date and time</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
+                  <div className="grid grid-cols-2 gap-2">
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal h-12 rounded-xl px-3",
+                            !date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                          <span className="truncate">{date ? format(date, "MMM d, yyyy") : "Date"}</span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={date}
+                          onSelect={setDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <div className="relative">
+                      <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                      <Input
+                        type="time"
+                        value={time}
+                        onChange={(e) => setTime(e.target.value)}
+                        className="h-12 rounded-xl pl-10 bg-white cursor-pointer input-picker-full"
                       />
-                    </PopoverContent>
-                  </Popover>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-4">
@@ -221,7 +234,7 @@ export default function CartPage() {
                 <Button 
                   onClick={handleCheckout} 
                   className="w-full h-14 rounded-full text-lg font-bold shadow-lg" 
-                  disabled={items.length === 0}
+                  disabled={items.length === 0 || !date || !time}
                 >
                   Confirm Order
                 </Button>
