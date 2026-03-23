@@ -12,13 +12,13 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote, Clock, AlertCircle } from 'lucide-react';
+import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote, Clock, AlertCircle, Loader2 } from 'lucide-react';
 import { format, isSameDay, isBefore, startOfToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { doc, collection, serverTimestamp } from 'firebase/firestore';
 import { useCart } from '@/hooks/use-cart';
 
 export default function CartPage() {
@@ -26,6 +26,7 @@ export default function CartPage() {
   const [time, setTime] = useState<string>('');
   const [payment, setPayment] = useState('cash');
   const [now, setNow] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const { toast } = useToast();
   const router = useRouter();
@@ -66,16 +67,80 @@ export default function CartPage() {
     return isBefore(selectedDateTime, now);
   }, [date, time, now]);
 
-  const handleCheckout = () => {
-    if (items.length === 0 || !date || !time || isTimeInPast) return;
+  const handleCheckout = async () => {
+    if (items.length === 0 || !date || !time || isTimeInPast || !user || !db) return;
     
-    toast({
-      title: "Order Placed!",
-      description: `Your pre-order for ${format(date, "PPP")} at ${time} has been sent.`,
-    });
+    setIsSubmitting(true);
     
-    clearCart();
-    router.push('/orders');
+    try {
+      // Group items by vendor for multiple orders if needed
+      const vendorsInCart = Array.from(new Set(items.map(i => i.vendorId)));
+      
+      const scheduledDateTime = new Date(date);
+      const [h, m] = time.split(':').map(Number);
+      scheduledDateTime.setHours(h, m, 0, 0);
+
+      vendorsInCart.forEach(vId => {
+        const vendorItems = items.filter(i => i.vendorId === vId);
+        const vendorTotal = vendorItems.reduce((acc, i) => acc + (i.price * i.quantity), 0);
+        
+        const orderId = doc(collection(db, 'orders')).id;
+        const orderRef = doc(db, 'orders', orderId);
+
+        const orderData = {
+          id: orderId,
+          customerId: user.uid,
+          customerName: userData?.firstName ? `${userData.firstName} ${userData.lastName}` : (user.displayName || user.email),
+          vendorId: vId,
+          vendorName: vendorItems[0].vendorName,
+          orderDateTime: serverTimestamp(),
+          scheduledPickupDateTime: scheduledDateTime.toISOString(),
+          totalAmount: vendorTotal,
+          paymentMethod: payment,
+          paymentStatus: 'Pending',
+          orderStatus: 'pending',
+          items: vendorItems.map(vi => ({
+            foodItemId: vi.id,
+            name: vi.name,
+            quantity: vi.quantity,
+            price: vi.price
+          })),
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+
+        setDocumentNonBlocking(orderRef, orderData, { merge: true });
+
+        // Also add items to subcollection per backend.json schema
+        const itemsCol = collection(db, 'orders', orderId, 'orderItems');
+        vendorItems.forEach(item => {
+          addDocumentNonBlocking(itemsCol, {
+            orderId: orderId,
+            menuItemId: item.id,
+            quantity: item.quantity,
+            priceAtOrder: item.price,
+            notes: ''
+          });
+        });
+      });
+
+      toast({
+        title: "Order Placed!",
+        description: `Your pre-order for ${format(date, "PPP")} at ${time} has been sent.`,
+      });
+      
+      clearCart();
+      router.push('/orders');
+    } catch (error) {
+      console.error("Checkout error:", error);
+      toast({
+        variant: "destructive",
+        title: "Order Failed",
+        description: "There was an error processing your order. Please try again.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isUserLoading || !user || userData?.userType === 'vendor') {
@@ -260,8 +325,9 @@ export default function CartPage() {
                 <Button 
                   onClick={handleCheckout} 
                   className="w-full h-14 rounded-full text-lg font-bold shadow-lg" 
-                  disabled={items.length === 0 || !date || !time || isTimeInPast}
+                  disabled={items.length === 0 || !date || !time || isTimeInPast || isSubmitting}
                 >
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
                   Confirm Order
                 </Button>
               </CardFooter>

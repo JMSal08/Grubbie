@@ -1,14 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { MOCK_ORDERS } from '@/lib/mock-data';
 import { 
   BarChart3, 
   Package, 
@@ -20,15 +19,16 @@ import {
   ChevronRight,
   Loader2,
   Power,
-  Edit
+  Edit,
+  ChefHat
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc, serverTimestamp } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { doc, serverTimestamp, query, collection, where, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { Order } from '@/lib/types';
 
 export default function VendorDashboard() {
   const { user, isUserLoading } = useUser();
@@ -42,9 +42,44 @@ export default function VendorDashboard() {
 
   const { data: profileData, isLoading: isProfileLoading } = useDoc(profileRef);
 
+  const ordersQuery = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return query(
+      collection(db, 'orders'), 
+      where('vendorId', '==', user.uid)
+    );
+  }, [db, user]);
+
+  const { data: orders, isLoading: isOrdersLoading } = useCollection<Order>(ordersQuery);
+
+  const { activeOrders, stats } = useMemo(() => {
+    if (!orders) return { activeOrders: [], stats: { new: 0, preparing: 0, revenue: 0 } };
+
+    const sorted = [...orders].sort((a, b) => {
+      const dateA = a.createdAt?.seconds || 0;
+      const dateB = b.createdAt?.seconds || 0;
+      return dateB - dateA;
+    });
+
+    const active = sorted.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
+    
+    // Revenue for "today" - simplified for MVP
+    const todayRevenue = orders
+      .filter(o => o.status === 'picked-up')
+      .reduce((acc, o) => acc + o.totalAmount, 0);
+
+    return {
+      activeOrders: active,
+      stats: {
+        new: orders.filter(o => o.status === 'pending').length,
+        preparing: orders.filter(o => o.status === 'preparing').length,
+        revenue: todayRevenue
+      }
+    };
+  }, [orders]);
+
   const toggleStatus = (online: boolean) => {
     if (!profileRef) return;
-    
     updateDocumentNonBlocking(profileRef, {
       isOnline: online,
       updatedAt: serverTimestamp()
@@ -56,7 +91,20 @@ export default function VendorDashboard() {
     });
   };
 
-  if (isUserLoading || isProfileLoading) {
+  const updateOrderStatus = (orderId: string, status: string) => {
+    const orderRef = doc(db, 'orders', orderId);
+    updateDocumentNonBlocking(orderRef, {
+      status: status,
+      updatedAt: serverTimestamp()
+    });
+
+    toast({
+      title: "Status Updated",
+      description: `Order marked as ${status}.`,
+    });
+  };
+
+  if (isUserLoading || isProfileLoading || isOrdersLoading) {
     return (
       <div className="min-h-screen bg-secondary/10 flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -73,7 +121,7 @@ export default function VendorDashboard() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 bg-white p-6 rounded-3xl shadow-sm border">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${profileData.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-colors ${profileData.isOnline ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
               <Power className="h-8 w-8" />
             </div>
             <div>
@@ -123,18 +171,18 @@ export default function VendorDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-bold">New Orders</p>
-                <h3 className="text-2xl font-bold">12</h3>
+                <h3 className="text-2xl font-bold">{stats.new}</h3>
               </div>
             </CardContent>
           </Card>
           <Card className="border-none shadow-sm">
             <CardContent className="p-6 flex items-center gap-4">
               <div className="p-3 bg-blue-100 rounded-2xl">
-                <Clock className="h-6 w-6 text-blue-600" />
+                <ChefHat className="h-6 w-6 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-bold">Preparing</p>
-                <h3 className="text-2xl font-bold">5</h3>
+                <h3 className="text-2xl font-bold">{stats.preparing}</h3>
               </div>
             </CardContent>
           </Card>
@@ -144,8 +192,8 @@ export default function VendorDashboard() {
                 <BarChart3 className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground font-bold">Today's Revenue</p>
-                <h3 className="text-2xl font-bold">₱4,520</h3>
+                <p className="text-sm text-muted-foreground font-bold">Total Revenue</p>
+                <h3 className="text-2xl font-bold">₱{stats.revenue}</h3>
               </div>
             </CardContent>
           </Card>
@@ -156,7 +204,7 @@ export default function VendorDashboard() {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground font-bold">Reports</p>
-                <h3 className="text-2xl font-bold">1</h3>
+                <h3 className="text-2xl font-bold">0</h3>
               </div>
             </CardContent>
           </Card>
@@ -164,82 +212,116 @@ export default function VendorDashboard() {
 
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Live Orders */}
-          <Card className="lg:col-span-2 border-none shadow-md overflow-hidden">
+          <Card className="lg:col-span-2 border-none shadow-md overflow-hidden bg-white">
             <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
               <div>
                 <CardTitle className="font-headline font-bold">Live Orders</CardTitle>
-                <CardDescription>Updates status in real-time</CardDescription>
+                <CardDescription>Update order status to notify customers</CardDescription>
               </div>
-              <Button variant="ghost" className="text-primary font-bold">View History</Button>
+              <Button variant="ghost" className="text-primary font-bold text-xs" asChild>
+                <Link href="/orders">View History</Link>
+              </Button>
             </CardHeader>
-            <CardContent className="p-0 bg-white">
-              <Table>
-                <TableHeader className="bg-secondary/20">
-                  <TableRow>
-                    <TableHead>Customer</TableHead>
-                    <TableHead>Order Details</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {MOCK_ORDERS.map((order) => (
-                    <TableRow key={order.id} className="group">
-                      <TableCell>
-                        <div className="font-bold">{order.customerName}</div>
-                        <div className="text-xs text-muted-foreground">{format(new Date(order.createdAt), 'hh:mm a')}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
-                        </div>
-                        <div className="text-xs font-bold text-accent mt-1 uppercase">{order.paymentMethod}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="capitalize px-3">
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline" className="rounded-full border-primary text-primary hover:bg-primary hover:text-white">
-                          <Check className="h-4 w-4 mr-1" /> Ready
-                        </Button>
-                        <Button size="icon" variant="ghost" className="rounded-full text-red-500">
-                          <AlertTriangle className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+            <CardContent className="p-0">
+              {activeOrders.length === 0 ? (
+                <div className="py-20 text-center">
+                  <p className="text-muted-foreground">No active orders at the moment.</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-secondary/20">
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {activeOrders.map((order) => (
+                      <TableRow key={order.id} className="group">
+                        <TableCell>
+                          <div className="font-bold text-sm">{order.customerName}</div>
+                          <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'hh:mm a') : 'Recently'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-xs">
+                            {order.items?.map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                          </div>
+                          <div className="text-[10px] font-bold text-accent mt-1 uppercase tracking-tighter">
+                            {order.paymentMethod} • ₱{order.totalAmount}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={order.status === 'ready' ? 'default' : 'secondary'} className="capitalize px-3 py-0.5 text-[10px] rounded-full">
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            {order.status === 'pending' && (
+                              <Button 
+                                size="sm" 
+                                className="h-8 rounded-full text-[10px]"
+                                onClick={() => updateOrderStatus(order.id, 'preparing')}
+                              >
+                                Accept
+                              </Button>
+                            )}
+                            {order.status === 'preparing' && (
+                              <Button 
+                                size="sm" 
+                                className="h-8 rounded-full text-[10px] bg-green-600 hover:bg-green-700"
+                                onClick={() => updateOrderStatus(order.id, 'ready')}
+                              >
+                                Ready
+                              </Button>
+                            )}
+                            {order.status === 'ready' && (
+                              <Button 
+                                size="sm" 
+                                className="h-8 rounded-full text-[10px] bg-blue-600 hover:bg-blue-700"
+                                onClick={() => updateOrderStatus(order.id, 'picked-up')}
+                              >
+                                Complete
+                              </Button>
+                            )}
+                            <Button 
+                              size="icon" 
+                              variant="ghost" 
+                              className="h-8 w-8 rounded-full text-red-500"
+                              onClick={() => updateOrderStatus(order.id, 'cancelled')}
+                            >
+                              <AlertTriangle className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
 
-          {/* Quick Menu Overview */}
+          {/* Performance Overview */}
           <div className="space-y-6">
-            <Card className="border-none shadow-md overflow-hidden">
+            <Card className="border-none shadow-md overflow-hidden bg-white">
               <CardHeader className="bg-accent text-accent-foreground">
-                <CardTitle className="font-headline font-bold">Menu Performance</CardTitle>
+                <CardTitle className="font-headline font-bold text-lg">Top Sellers</CardTitle>
               </CardHeader>
               <CardContent className="p-6 space-y-6">
-                {[
-                  { name: 'Cheeseburger', sales: 45, price: 120 },
-                  { name: 'Pasta Carbonara', sales: 32, price: 150 },
-                  { name: 'Garden Salad', sales: 18, price: 90 },
-                ].map((item, idx) => (
-                  <div key={idx} className="flex justify-between items-center group">
-                    <div className="space-y-1">
-                      <h4 className="font-bold">{item.name}</h4>
-                      <p className="text-xs text-muted-foreground">{item.sales} orders today</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold text-accent">₱{item.price}</div>
-                      <Button variant="link" size="sm" className="h-auto p-0 text-xs">Edit</Button>
-                    </div>
-                  </div>
-                ))}
-                <Button className="w-full rounded-full variant-outline border-accent text-accent mt-4" variant="outline">
-                  View Full Analytics <ChevronRight className="h-4 w-4 ml-1" />
+                <div className="text-center py-10">
+                   <BarChart3 className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
+                   <p className="text-xs text-muted-foreground">Performance data will appear as you fulfill more orders.</p>
+                </div>
+                <Button className="w-full rounded-full border-accent text-accent mt-4 h-12 font-bold" variant="outline" asChild>
+                  <Link href="/profile">
+                    Store Settings <ChevronRight className="h-4 w-4 ml-1" />
+                  </Link>
                 </Button>
               </CardContent>
             </Card>
