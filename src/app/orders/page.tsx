@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -150,7 +149,7 @@ export default function OrdersPage() {
                     <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 items-start">
                       <AlertCircle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
                       <div>
-                        <h5 className="text-sm font-bold text-red-900 mb-1">Reason for Deletion</h5>
+                        <h5 className="text-sm font-bold text-red-900 mb-1">Reason for Cancellation</h5>
                         <p className="text-sm text-red-800 leading-relaxed">
                           {order.cancellationNote || "The vendor has cancelled this order without providing a specific reason."}
                         </p>
