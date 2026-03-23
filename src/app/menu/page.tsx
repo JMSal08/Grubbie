@@ -17,6 +17,7 @@ import { Vendor, FoodItem } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { deleteDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import Link from 'next/link';
+import { useCart } from '@/hooks/use-cart';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ function MenuContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { toast } = useToast();
+  const { addItem } = useCart();
   const vendorId = searchParams.get('vendor');
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('Cafeteria');
@@ -150,6 +152,8 @@ function MenuContent() {
       });
       return;
     }
+
+    addItem(item);
     
     toast({
       title: "Added to cart",

@@ -1,7 +1,9 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { CartProvider } from '@/hooks/use-cart';
 
 export const metadata: Metadata = {
   title: 'Grubbie - Food Pre-ordering',
@@ -22,8 +24,10 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
         <FirebaseClientProvider>
-          {children}
-          <Toaster />
+          <CartProvider>
+            {children}
+            <Toaster />
+          </CartProvider>
         </FirebaseClientProvider>
       </body>
     </html>

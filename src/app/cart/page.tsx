@@ -17,12 +17,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { useCart } from '@/hooks/use-cart';
 
 export default function CartPage() {
   const [date, setDate] = useState<Date>();
   const [payment, setPayment] = useState('gcash');
   const { toast } = useToast();
   const router = useRouter();
+  const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
   
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
@@ -44,18 +46,16 @@ export default function CartPage() {
     }
   }, [userData, router]);
 
-  // Initialize with empty cart
-  const [items, setItems] = useState<any[]>([]);
-
-  const subtotal = items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const total = subtotal;
-
   const handleCheckout = () => {
     if (items.length === 0) return;
+    
+    // In a real app, we'd add the order to Firestore here.
     toast({
       title: "Order Placed!",
-      description: `Your pre-order has been sent to ${items[0].vendorName}.`,
+      description: `Your pre-order has been sent to the vendors.`,
     });
+    
+    clearCart();
     router.push('/orders');
   };
 
@@ -76,7 +76,7 @@ export default function CartPage() {
             {items.map((item) => (
               <Card key={item.id} className="overflow-hidden border-none shadow-sm">
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="relative w-24 h-24 rounded-lg overflow-hidden shrink-0">
+                  <div className="relative w-24 h-24 rounded-lg overflow-hidden shrink-0 bg-muted">
                     <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full" />
                   </div>
                   <div className="flex-1 space-y-1">
@@ -87,11 +87,30 @@ export default function CartPage() {
                     <p className="text-sm text-muted-foreground">{item.vendorName}</p>
                     <div className="flex items-center gap-4 pt-2">
                       <div className="flex items-center border rounded-full px-2 py-1 bg-secondary/30">
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full"><Minus className="h-3 w-3" /></Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 rounded-full"
+                          onClick={() => updateQuantity(item.id, -1)}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
                         <span className="px-3 text-sm font-bold">{item.quantity}</span>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full"><Plus className="h-3 w-3" /></Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6 rounded-full"
+                          onClick={() => updateQuantity(item.id, 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
                       </div>
-                      <Button variant="ghost" size="icon" className="text-destructive h-8 w-8">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-destructive h-8 w-8"
+                        onClick={() => removeItem(item.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -129,7 +148,7 @@ export default function CartPage() {
                   <Separator />
                   <div className="flex justify-between text-lg font-bold text-accent">
                     <span>Total</span>
-                    <span>₱{total}</span>
+                    <span>₱{subtotal}</span>
                   </div>
                 </div>
 
@@ -187,7 +206,11 @@ export default function CartPage() {
                 </div>
               </CardContent>
               <CardFooter className="p-6 pt-0">
-                <Button onClick={handleCheckout} className="w-full h-14 rounded-full text-lg font-bold shadow-lg" disabled={items.length === 0}>
+                <Button 
+                  onClick={handleCheckout} 
+                  className="w-full h-14 rounded-full text-lg font-bold shadow-lg" 
+                  disabled={items.length === 0}
+                >
                   Confirm Order
                 </Button>
               </CardFooter>

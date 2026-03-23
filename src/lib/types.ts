@@ -39,6 +39,10 @@ export interface FoodItem {
   preparationTimeUnit?: 'mins' | 'hours';
 }
 
+export interface CartItem extends FoodItem {
+  quantity: number;
+}
+
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'picked-up' | 'cancelled';
 
 export interface Order {

@@ -24,12 +24,14 @@ import { useUser, useFirestore, useDoc, useMemoFirebase, useAuth } from '@/fireb
 import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/hooks/use-cart';
 
-export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
+export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number }) {
   const { user } = useUser();
   const db = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
+  const { totalCount } = useCart();
 
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -54,6 +56,9 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
   };
 
   const isVendor = userData?.userType === 'vendor';
+
+  // Use the totalCount from context if it's greater than 0, otherwise fallback to prop
+  const displayCartCount = totalCount > 0 ? totalCount : propCartCount;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -87,9 +92,9 @@ export function Navbar({ cartCount = 0 }: { cartCount?: number }) {
             <Button variant="ghost" size="icon" asChild className="relative">
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />
-                {cartCount > 0 && (
+                {displayCartCount > 0 && (
                   <Badge className="absolute -right-1 -top-1 h-5 w-5 items-center justify-center rounded-full p-0 text-[10px]" variant="default">
-                    {cartCount}
+                    {displayCartCount}
                   </Badge>
                 )}
               </Link>
