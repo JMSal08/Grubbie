@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,8 +12,8 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote, Clock } from 'lucide-react';
-import { format } from 'date-fns';
+import { CalendarIcon, Trash2, Minus, Plus, CreditCard, Banknote, Clock, AlertCircle } from 'lucide-react';
+import { format, isSameDay, isBefore, startOfToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,8 @@ export default function CartPage() {
   const [date, setDate] = useState<Date>();
   const [time, setTime] = useState<string>('');
   const [payment, setPayment] = useState('cash');
+  const [now, setNow] = useState<Date | null>(null);
+  
   const { toast } = useToast();
   const router = useRouter();
   const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
@@ -38,6 +40,10 @@ export default function CartPage() {
   const { data: userData } = useDoc(userDocRef);
 
   useEffect(() => {
+    setNow(new Date());
+  }, []);
+
+  useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/auth/login');
     }
@@ -49,10 +55,20 @@ export default function CartPage() {
     }
   }, [userData, router]);
 
-  const handleCheckout = () => {
-    if (items.length === 0 || !date || !time) return;
+  const isTimeInPast = useMemo(() => {
+    if (!now || !date || !time) return false;
+    if (!isSameDay(date, now)) return false;
     
-    // In a real app, we'd add the order to Firestore here.
+    const [hours, minutes] = time.split(':').map(Number);
+    const selectedDateTime = new Date(date);
+    selectedDateTime.setHours(hours, minutes, 0, 0);
+    
+    return isBefore(selectedDateTime, now);
+  }, [date, time, now]);
+
+  const handleCheckout = () => {
+    if (items.length === 0 || !date || !time || isTimeInPast) return;
+    
     toast({
       title: "Order Placed!",
       description: `Your pre-order for ${format(date, "PPP")} at ${time} has been sent.`,
@@ -164,7 +180,8 @@ export default function CartPage() {
                           variant="outline"
                           className={cn(
                             "w-full justify-start text-left font-normal h-12 rounded-xl px-3",
-                            !date && "text-muted-foreground"
+                            !date && "text-muted-foreground",
+                            date && now && isBefore(date, startOfToday()) && "border-destructive"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
@@ -176,6 +193,7 @@ export default function CartPage() {
                           mode="single"
                           selected={date}
                           onSelect={setDate}
+                          disabled={{ before: now || new Date() }}
                           initialFocus
                         />
                       </PopoverContent>
@@ -186,10 +204,18 @@ export default function CartPage() {
                         type="time"
                         value={time}
                         onChange={(e) => setTime(e.target.value)}
-                        className="h-12 rounded-xl pl-10 bg-white cursor-pointer input-picker-full"
+                        className={cn(
+                          "h-12 rounded-xl pl-10 bg-white cursor-pointer input-picker-full",
+                          isTimeInPast && "border-destructive focus-visible:ring-destructive"
+                        )}
                       />
                     </div>
                   </div>
+                  {isTimeInPast && (
+                    <p className="text-[10px] text-destructive font-bold flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> Pickup time must be in the future.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-4">
@@ -234,7 +260,7 @@ export default function CartPage() {
                 <Button 
                   onClick={handleCheckout} 
                   className="w-full h-14 rounded-full text-lg font-bold shadow-lg" 
-                  disabled={items.length === 0 || !date || !time}
+                  disabled={items.length === 0 || !date || !time || isTimeInPast}
                 >
                   Confirm Order
                 </Button>
