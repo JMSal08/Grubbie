@@ -22,7 +22,9 @@ import {
   Power,
   Edit,
   ChefHat,
-  X
+  X,
+  History,
+  LayoutList
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -47,6 +49,7 @@ export default function VendorDashboard() {
   
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   const [cancelNote, setCancelNote] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -57,6 +60,7 @@ export default function VendorDashboard() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
+    // This query is inherently vendor-specific as it filters by user.uid
     return query(
       collection(db, 'orders'), 
       where('vendorId', '==', user.uid)
@@ -65,8 +69,8 @@ export default function VendorDashboard() {
 
   const { data: orders, isLoading: isOrdersLoading } = useCollection<Order>(ordersQuery);
 
-  const { activeOrders, stats } = useMemo(() => {
-    if (!orders) return { activeOrders: [], stats: { new: 0, preparing: 0, revenue: 0 } };
+  const { activeOrders, historyOrders, stats } = useMemo(() => {
+    if (!orders) return { activeOrders: [], historyOrders: [], stats: { new: 0, preparing: 0, revenue: 0 } };
 
     const sorted = [...orders].sort((a, b) => {
       const dateA = a.createdAt?.seconds || 0;
@@ -75,6 +79,7 @@ export default function VendorDashboard() {
     });
 
     const active = sorted.filter(o => ['pending', 'preparing', 'ready'].includes(o.status));
+    const history = sorted.filter(o => ['picked-up', 'cancelled'].includes(o.status));
     
     const todayRevenue = orders
       .filter(o => o.status === 'picked-up')
@@ -82,6 +87,7 @@ export default function VendorDashboard() {
 
     return {
       activeOrders: active,
+      historyOrders: history,
       stats: {
         new: orders.filter(o => o.status === 'pending').length,
         preparing: orders.filter(o => o.status === 'preparing').length,
@@ -126,6 +132,8 @@ export default function VendorDashboard() {
       setCancelNote("");
     }
   };
+
+  const displayedOrders = showHistory ? historyOrders : activeOrders;
 
   if (isUserLoading || isProfileLoading || isOrdersLoading) {
     return (
@@ -229,21 +237,40 @@ export default function VendorDashboard() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-8">
-          {/* Live Orders */}
+          {/* Orders Section */}
           <Card className="lg:col-span-2 border-none shadow-md overflow-hidden bg-white">
-            <CardHeader className="flex flex-row items-center justify-between border-b bg-white">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b bg-white gap-4">
               <div>
-                <CardTitle className="font-headline font-bold">Live Orders</CardTitle>
-                <CardDescription>Update order status to notify customers</CardDescription>
+                <CardTitle className="font-headline font-bold">{showHistory ? 'Store History' : 'Live Orders'}</CardTitle>
+                <CardDescription>
+                  {showHistory ? 'Viewing completed and cancelled orders' : 'Update order status to notify customers'}
+                </CardDescription>
               </div>
-              <Button variant="ghost" className="text-primary font-bold text-xs" asChild>
-                <Link href="/orders">View History</Link>
-              </Button>
+              <div className="flex bg-secondary/30 rounded-full p-1 border">
+                <Button 
+                  variant={!showHistory ? "default" : "ghost"} 
+                  size="sm" 
+                  className="rounded-full gap-2 px-4 h-8 text-xs"
+                  onClick={() => setShowHistory(false)}
+                >
+                  <LayoutList className="h-3.5 w-3.5" />
+                  Live
+                </Button>
+                <Button 
+                  variant={showHistory ? "default" : "ghost"} 
+                  size="sm" 
+                  className="rounded-full gap-2 px-4 h-8 text-xs"
+                  onClick={() => setShowHistory(true)}
+                >
+                  <History className="h-3.5 w-3.5" />
+                  History
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="p-0">
-              {activeOrders.length === 0 ? (
+              {displayedOrders.length === 0 ? (
                 <div className="py-20 text-center">
-                  <p className="text-muted-foreground">No active orders at the moment.</p>
+                  <p className="text-muted-foreground">No {showHistory ? 'past' : 'active'} orders at the moment.</p>
                 </div>
               ) : (
                 <Table>
@@ -252,17 +279,17 @@ export default function VendorDashboard() {
                       <TableHead>Customer</TableHead>
                       <TableHead>Details</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
+                      {!showHistory && <TableHead className="text-right">Action</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {activeOrders.map((order) => (
+                    {displayedOrders.map((order) => (
                       <TableRow key={order.id} className="group">
                         <TableCell>
                           <div className="font-bold text-sm">{order.customerName}</div>
                           <div className="text-[10px] text-muted-foreground flex items-center gap-1">
                             <Clock className="h-3 w-3" />
-                            {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'hh:mm a') : 'Recently'}
+                            {order.createdAt?.seconds ? format(new Date(order.createdAt.seconds * 1000), 'MMM d, hh:mm a') : 'Recently'}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -274,49 +301,54 @@ export default function VendorDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant={order.status === 'ready' ? 'default' : 'secondary'} className="capitalize px-3 py-0.5 text-[10px] rounded-full">
+                          <Badge 
+                            variant={order.status === 'ready' || order.status === 'picked-up' ? 'default' : order.status === 'cancelled' ? 'destructive' : 'secondary'} 
+                            className="capitalize px-3 py-0.5 text-[10px] rounded-full"
+                          >
                             {order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            {order.status === 'pending' && (
+                        {!showHistory && (
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              {order.status === 'pending' && (
+                                <Button 
+                                  size="sm" 
+                                  className="h-8 rounded-full text-[10px] bg-primary text-primary-foreground font-bold"
+                                  onClick={() => updateOrderStatus(order.id, 'preparing')}
+                                >
+                                  Accept
+                                </Button>
+                              )}
+                              {order.status === 'preparing' && (
+                                <Button 
+                                  size="sm" 
+                                  className="h-8 rounded-full text-[10px] bg-green-600 hover:bg-green-700 font-bold"
+                                  onClick={() => updateOrderStatus(order.id, 'ready')}
+                                >
+                                  Ready
+                                </Button>
+                              )}
+                              {order.status === 'ready' && (
+                                <Button 
+                                  size="sm" 
+                                  className="h-8 rounded-full text-[10px] bg-blue-600 hover:bg-blue-700 font-bold"
+                                  onClick={() => updateOrderStatus(order.id, 'picked-up')}
+                                >
+                                  Complete
+                                </Button>
+                              )}
                               <Button 
-                                size="sm" 
-                                className="h-8 rounded-full text-[10px] bg-primary text-primary-foreground font-bold"
-                                onClick={() => updateOrderStatus(order.id, 'preparing')}
+                                size="icon" 
+                                variant="ghost" 
+                                className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50"
+                                onClick={() => setCancellingOrder(order.id)}
                               >
-                                Accept
+                                <X className="h-4 w-4" />
                               </Button>
-                            )}
-                            {order.status === 'preparing' && (
-                              <Button 
-                                size="sm" 
-                                className="h-8 rounded-full text-[10px] bg-green-600 hover:bg-green-700 font-bold"
-                                onClick={() => updateOrderStatus(order.id, 'ready')}
-                              >
-                                Ready
-                              </Button>
-                            )}
-                            {order.status === 'ready' && (
-                              <Button 
-                                size="sm" 
-                                className="h-8 rounded-full text-[10px] bg-blue-600 hover:bg-blue-700 font-bold"
-                                onClick={() => updateOrderStatus(order.id, 'picked-up')}
-                              >
-                                Complete
-                              </Button>
-                            )}
-                            <Button 
-                              size="icon" 
-                              variant="ghost" 
-                              className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50"
-                              onClick={() => setCancellingOrder(order.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))}
                   </TableBody>
