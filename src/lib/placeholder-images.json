@@ -45,25 +45,25 @@
     {
       "id": "creator-1",
       "description": "Lead Developer Profile",
-      "imageUrl": "https://drive.google.com/thumbnail?id=1zvtJwRzZn1T5c0ZbcHMXQMBXujhxqGnA",
+      "imageUrl": "https://lh3.googleusercontent.com/d/1zvtJwRzZn1T5c0ZbcHMXQMBXujhxqGnA",
       "imageHint": "person developer"
     },
     {
       "id": "creator-2",
       "description": "UI Designer Profile",
-      "imageUrl": "https://picsum.photos/seed/creator2/400/400",
+      "imageUrl": "https://lh3.googleusercontent.com/d/1S-Xz8Xngj9o933LO23gF-pynf4tDqONw",
       "imageHint": "person designer"
     },
     {
       "id": "creator-3",
       "description": "Backend Engineer Profile",
-      "imageUrl": "https://picsum.photos/seed/creator3/400/400",
+      "imageUrl": "https://lh3.googleusercontent.com/d/1S-Xz8Xngj9o933LO23gF-pynf4tDqONw",
       "imageHint": "person engineer"
     },
     {
       "id": "creator-4",
       "description": "Project Manager Profile",
-      "imageUrl": "https://picsum.photos/seed/creator4/400/400",
+      "imageUrl": "https://lh3.googleusercontent.com/d/1S-Xz8Xngj9o933LO23gF-pynf4tDqONw",
       "imageHint": "person manager"
     }
   ]

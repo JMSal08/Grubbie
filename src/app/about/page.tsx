@@ -11,7 +11,7 @@ export default function AboutPage() {
   const creators = [
     { name: "Jan Michael Renz Salcedo", role: "Lead Developer", image: PlaceHolderImages.find(img => img.id === 'creator-1') },
     { name: "Dominique Luna", role: "UI Designer", image: PlaceHolderImages.find(img => img.id === 'creator-2') },
-    { name: "Kendrick Malonzo", role: "Developer", image: PlaceHolderImages.find(img => img.id === 'creator-3') },
+    { name: "Kendrick Louiz Malonzo", role: "Developer", image: PlaceHolderImages.find(img => img.id === 'creator-3') },
     { name: "Marion James Dapiawen", role: "Developer", image: PlaceHolderImages.find(img => img.id === 'creator-4') },
   ];
 
