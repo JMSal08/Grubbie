@@ -43,7 +43,7 @@ export default function AboutPage() {
             <div className="space-y-6">
               <h2 className="text-3xl font-headline font-bold text-accent">Our Mission</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To empower university communities by providing a seamless, digital-first food ordering experience that saves time, reduces stress, and supports local vendors.
+                To empower the school community by providing a seamless, digital-first food ordering experience that saves time, reduces stress, and supports local vendors.
               </p>
               <div className="space-y-4">
                 <div className="flex gap-4">
