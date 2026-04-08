@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,6 +50,7 @@ export default function VendorDashboard() {
   const db = useFirestore();
   const { toast } = useToast();
   
+  const qrInputRef = useRef<HTMLInputElement>(null);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   const [cancelNote, setCancelNote] = useState("");
   const [showHistory, setShowHistory] = useState(false);
@@ -447,7 +448,10 @@ export default function VendorDashboard() {
           </DialogHeader>
           
           <div className="py-6 space-y-6">
-            <div className="aspect-square w-full border-2 border-dashed rounded-3xl flex flex-col items-center justify-center bg-secondary/5 overflow-hidden relative group">
+            <div 
+              className="aspect-square w-full border-2 border-dashed rounded-3xl flex flex-col items-center justify-center bg-secondary/5 overflow-hidden relative group cursor-pointer"
+              onClick={() => qrInputRef.current?.click()}
+            >
               {(qrUploadType === 'gcash' ? profileData.gcashQrUrl : profileData.mayaQrUrl) ? (
                 <>
                   <img 
@@ -468,13 +472,24 @@ export default function VendorDashboard() {
                 </div>
               )}
               <Input 
+                ref={qrInputRef}
                 type="file" 
                 accept="image/*" 
-                className="absolute inset-0 opacity-0 cursor-pointer" 
+                className="hidden" 
                 onChange={handleQrUpload}
                 disabled={isQrSaving}
               />
             </div>
+
+            <Button 
+              className="w-full rounded-xl gap-2 h-12 font-bold"
+              variant="outline"
+              onClick={() => qrInputRef.current?.click()}
+              disabled={isQrSaving}
+            >
+              {isQrSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              Add Qr
+            </Button>
 
             <div className="bg-primary/5 p-4 rounded-2xl flex gap-3 items-start border border-primary/10">
               <Upload className="h-4 w-4 text-primary shrink-0 mt-0.5" />
