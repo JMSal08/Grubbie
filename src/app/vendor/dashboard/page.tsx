@@ -3,7 +3,7 @@
 
 import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -24,7 +24,10 @@ import {
   ChefHat,
   X,
   History,
-  LayoutList
+  LayoutList,
+  QrCode,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -50,6 +53,8 @@ export default function VendorDashboard() {
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
   const [cancelNote, setCancelNote] = useState("");
   const [showHistory, setShowHistory] = useState(false);
+  const [qrUploadType, setQrUploadType] = useState<'gcash' | 'maya' | null>(null);
+  const [isQrSaving, setIsQrSaving] = useState(false);
 
   const profileRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -60,7 +65,6 @@ export default function VendorDashboard() {
 
   const ordersQuery = useMemoFirebase(() => {
     if (!db || !user) return null;
-    // This query is inherently vendor-specific as it filters by user.uid
     return query(
       collection(db, 'orders'), 
       where('vendorId', '==', user.uid)
@@ -131,6 +135,39 @@ export default function VendorDashboard() {
       setCancellingOrder(null);
       setCancelNote("");
     }
+  };
+
+  const handleQrUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !profileRef || !qrUploadType) return;
+
+    if (file.size > 700 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please upload an image smaller than 700KB.",
+      });
+      return;
+    }
+
+    setIsQrSaving(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const field = qrUploadType === 'gcash' ? 'gcashQrUrl' : 'mayaQrUrl';
+      
+      updateDocumentNonBlocking(profileRef, {
+        [field]: dataUrl,
+        updatedAt: serverTimestamp()
+      });
+
+      setIsQrSaving(false);
+      toast({
+        title: "QR Code Updated",
+        description: `Your ${qrUploadType === 'gcash' ? 'GCash' : 'Maya'} payment QR has been saved.`,
+      });
+    };
+    reader.readAsDataURL(file);
   };
 
   const displayedOrders = showHistory ? historyOrders : activeOrders;
@@ -357,7 +394,7 @@ export default function VendorDashboard() {
             </CardContent>
           </Card>
 
-          {/* Performance Overview */}
+          {/* Quick Access Section */}
           <div className="space-y-6">
             <Card className="border-none shadow-md overflow-hidden bg-white">
               <CardHeader className="bg-accent text-accent-foreground">
@@ -369,6 +406,23 @@ export default function VendorDashboard() {
                     My Storefront <ChevronRight className="h-4 w-4" />
                   </Link>
                 </Button>
+                
+                <Button 
+                  className="w-full rounded-full border-accent text-accent h-12 font-bold justify-between" 
+                  variant="outline" 
+                  onClick={() => setQrUploadType('gcash')}
+                >
+                  Gcash Payment Qr <QrCode className="h-4 w-4" />
+                </Button>
+
+                <Button 
+                  className="w-full rounded-full border-accent text-accent h-12 font-bold justify-between" 
+                  variant="outline" 
+                  onClick={() => setQrUploadType('maya')}
+                >
+                  Maya Payment Qr <QrCode className="h-4 w-4" />
+                </Button>
+
                 <Button className="w-full rounded-full border-accent text-accent h-12 font-bold justify-between" variant="outline" asChild>
                   <Link href="/profile">
                     Account Settings <ChevronRight className="h-4 w-4" />
@@ -379,6 +433,64 @@ export default function VendorDashboard() {
           </div>
         </div>
       </main>
+
+      {/* QR Upload Dialog */}
+      <Dialog open={!!qrUploadType} onOpenChange={(open) => !open && setQrUploadType(null)}>
+        <DialogContent className="rounded-3xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-accent capitalize">
+              {qrUploadType} Payment QR
+            </DialogTitle>
+            <DialogDescription>
+              Upload your payment QR code for customers to scan.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6 space-y-6">
+            <div className="aspect-square w-full border-2 border-dashed rounded-3xl flex flex-col items-center justify-center bg-secondary/5 overflow-hidden relative group">
+              {(qrUploadType === 'gcash' ? profileData.gcashQrUrl : profileData.mayaQrUrl) ? (
+                <>
+                  <img 
+                    src={qrUploadType === 'gcash' ? profileData.gcashQrUrl : profileData.mayaQrUrl} 
+                    alt={`${qrUploadType} QR`} 
+                    className="w-full h-full object-contain p-4"
+                  />
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <p className="text-white text-xs font-bold">Click to replace</p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center p-6">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                    <ImageIcon className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground">No QR code uploaded yet</p>
+                </div>
+              )}
+              <Input 
+                type="file" 
+                accept="image/*" 
+                className="absolute inset-0 opacity-0 cursor-pointer" 
+                onChange={handleQrUpload}
+                disabled={isQrSaving}
+              />
+            </div>
+
+            <div className="bg-primary/5 p-4 rounded-2xl flex gap-3 items-start border border-primary/10">
+              <Upload className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                Tip: Use a clear, high-contrast image of your QR code so customers can easily scan it from their mobile screens.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setQrUploadType(null)} className="rounded-full w-full">
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Cancellation Dialog */}
       <Dialog open={!!cancellingOrder} onOpenChange={(open) => !open && setCancellingOrder(null)}>

@@ -149,6 +149,16 @@
         "isOnline": {
           "type": "boolean",
           "description": "Manual override for vendor visibility on the menu page."
+        },
+        "gcashQrUrl": {
+          "type": "string",
+          "description": "URL to the vendor's GCash payment QR code image.",
+          "format": "uri"
+        },
+        "mayaQrUrl": {
+          "type": "string",
+          "description": "URL to the vendor's Maya payment QR code image.",
+          "format": "uri"
         }
       },
       "required": [
