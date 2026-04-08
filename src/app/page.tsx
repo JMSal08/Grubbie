@@ -76,7 +76,7 @@ export default function Home() {
                   <ShieldCheck className="h-8 w-8 text-accent" />
                 </div>
                 <h3 className="text-xl font-headline font-bold">Secure Payments</h3>
-                <p className="text-muted-foreground">Convenient cashless options with GCash, PayMaya, or cash on pickup.</p>
+                <p className="text-muted-foreground">Convenient cashless options with GCash, Maya, or cash on pickup.</p>
               </div>
               <div className="bg-card p-8 rounded-3xl text-center space-y-4 shadow-sm border border-border/50">
                 <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
