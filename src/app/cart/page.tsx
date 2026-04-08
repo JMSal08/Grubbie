@@ -17,8 +17,8 @@ import { format, isSameDay, isBefore, startOfToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection, serverTimestamp } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, setDocumentNonBlocking } from '@/firebase';
+import { doc, collection, collectionGroup, query, serverTimestamp } from 'firebase/firestore';
 import { useCart } from '@/hooks/use-cart';
 
 export default function CartPage() {
@@ -39,6 +39,44 @@ export default function CartPage() {
     return doc(db, 'users', user.uid);
   }, [db, user]);
   const { data: userData } = useDoc(userDocRef);
+
+  // Get unique vendor IDs from the cart to check payment support
+  const vendorIdsInCart = useMemo(() => 
+    Array.from(new Set(items.map(item => item.vendorId))), 
+    [items]
+  );
+
+  // Fetch all vendor profiles to check for QR codes
+  const vendorProfilesQuery = useMemoFirebase(() => {
+    if (!db) return null;
+    return query(collectionGroup(db, 'vendorProfile'));
+  }, [db]);
+
+  const { data: allVendorProfiles, isLoading: isProfilesLoading } = useCollection(vendorProfilesQuery);
+
+  // Determine if GCash/Maya are supported by ALL vendors in the current cart
+  const paymentSupport = useMemo(() => {
+    if (!allVendorProfiles || vendorIdsInCart.length === 0) return { gcash: false, maya: false };
+
+    const relevantProfiles = allVendorProfiles.filter(p => vendorIdsInCart.includes(p.userId));
+    
+    // We need to have found all profiles to be sure
+    if (relevantProfiles.length < vendorIdsInCart.length && !isProfilesLoading) {
+      // Some vendors might not have profiles yet or are missing
+      return { gcash: false, maya: false };
+    }
+
+    const gcashSupported = relevantProfiles.length > 0 && relevantProfiles.every(p => !!p.gcashQrUrl);
+    const mayaSupported = relevantProfiles.length > 0 && relevantProfiles.every(p => !!p.mayaQrUrl);
+
+    return { gcash: gcashSupported, maya: mayaSupported };
+  }, [allVendorProfiles, vendorIdsInCart, isProfilesLoading]);
+
+  // Reset payment method if it becomes unsupported
+  useEffect(() => {
+    if (payment === 'gcash' && !paymentSupport.gcash) setPayment('cash');
+    if (payment === 'paymaya' && !paymentSupport.maya) setPayment('cash');
+  }, [paymentSupport, payment]);
 
   useEffect(() => {
     setNow(new Date());
@@ -288,30 +326,41 @@ export default function CartPage() {
                   <div className="flex items-center justify-between">
                     <Label className="text-sm font-bold">Payment Method</Label>
                     <Badge variant="outline" className="text-[10px] uppercase font-bold text-muted-foreground bg-muted/50 border-none">
-                      Cash Only
+                      Vendor Options
                     </Badge>
                   </div>
                   <RadioGroup value={payment} onValueChange={setPayment} className="grid grid-cols-1 gap-3">
-                    <div className="flex items-center space-x-3 rounded-xl border p-4 opacity-50 cursor-not-allowed bg-muted/10">
-                      <RadioGroupItem value="gcash" id="gcash" disabled />
-                      <Label htmlFor="gcash" className="flex-1 flex items-center justify-between cursor-not-allowed">
+                    {/* GCash Option */}
+                    <div className={cn(
+                      "flex items-center space-x-3 rounded-xl border p-4 transition-colors",
+                      !paymentSupport.gcash ? "opacity-50 cursor-not-allowed bg-muted/10" : "cursor-pointer hover:bg-secondary/20 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                    )}>
+                      <RadioGroupItem value="gcash" id="gcash" disabled={!paymentSupport.gcash} />
+                      <Label htmlFor="gcash" className={cn("flex-1 flex items-center justify-between", !paymentSupport.gcash ? "cursor-not-allowed" : "cursor-pointer")}>
                         <div className="flex items-center gap-3">
-                          <CreditCard className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-bold text-muted-foreground">GCash</span>
+                          <CreditCard className={cn("h-5 w-5", paymentSupport.gcash ? "text-primary" : "text-muted-foreground")} />
+                          <span className={cn("font-bold", !paymentSupport.gcash && "text-muted-foreground")}>GCash</span>
                         </div>
-                        <span className="text-[10px] font-bold text-red-500 uppercase">Unavailable</span>
+                        {!paymentSupport.gcash && <span className="text-[10px] font-bold text-red-500 uppercase">Unavailable</span>}
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-3 rounded-xl border p-4 opacity-50 cursor-not-allowed bg-muted/10">
-                      <RadioGroupItem value="paymaya" id="paymaya" disabled />
-                      <Label htmlFor="paymaya" className="flex-1 flex items-center justify-between cursor-not-allowed">
+
+                    {/* PayMaya Option */}
+                    <div className={cn(
+                      "flex items-center space-x-3 rounded-xl border p-4 transition-colors",
+                      !paymentSupport.maya ? "opacity-50 cursor-not-allowed bg-muted/10" : "cursor-pointer hover:bg-secondary/20 has-[:checked]:border-primary has-[:checked]:bg-primary/5"
+                    )}>
+                      <RadioGroupItem value="paymaya" id="paymaya" disabled={!paymentSupport.maya} />
+                      <Label htmlFor="paymaya" className={cn("flex-1 flex items-center justify-between", !paymentSupport.maya ? "cursor-not-allowed" : "cursor-pointer")}>
                         <div className="flex items-center gap-3">
-                          <CreditCard className="h-5 w-5 text-muted-foreground" />
-                          <span className="font-bold text-muted-foreground">PayMaya</span>
+                          <CreditCard className={cn("h-5 w-5", paymentSupport.maya ? "text-primary" : "text-muted-foreground")} />
+                          <span className={cn("font-bold", !paymentSupport.maya && "text-muted-foreground")}>PayMaya</span>
                         </div>
-                        <span className="text-[10px] font-bold text-red-500 uppercase">Unavailable</span>
+                        {!paymentSupport.maya && <span className="text-[10px] font-bold text-red-500 uppercase">Unavailable</span>}
                       </Label>
                     </div>
+
+                    {/* Cash Option */}
                     <div className="flex items-center space-x-3 rounded-xl border p-4 cursor-pointer hover:bg-secondary/20 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
                       <RadioGroupItem value="cash" id="cash" />
                       <Label htmlFor="cash" className="flex-1 flex items-center gap-3 cursor-pointer">
