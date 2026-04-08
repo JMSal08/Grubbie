@@ -59,9 +59,11 @@ function MenuContent() {
   }, [db, vendorId]);
 
   const usersQuery = useMemoFirebase(() => {
-    if (!db || vendorId) return null;
+    // Only fetch users collection if authenticated to check for blocked/deleted accounts
+    // Unauthenticated users will just see all vendors from profile discovery
+    if (!db || vendorId || !user) return null;
     return query(collection(db, 'users'), where('userType', '==', 'vendor'));
-  }, [db, vendorId]);
+  }, [db, vendorId, user]);
 
   const { data: profilesData, isLoading: profilesLoading } = useCollection(vendorsProfilesQuery);
   const { data: usersData, isLoading: usersLoading } = useCollection(usersQuery);
@@ -89,12 +91,16 @@ function MenuContent() {
   const { data: menuItems, isLoading: isMenuLoading } = useCollection(menuItemsQuery);
 
   const vendors = useMemo(() => {
-    if (!profilesData || !usersData) return [];
+    if (!profilesData) return [];
     
     return profilesData
       .filter(profile => {
-        const userAccount = usersData.find(u => u.id === profile.userId);
-        if (!userAccount || userAccount.isBlocked || userAccount.deletedAt) return false;
+        // If user is logged in, filter out blocked or deleted vendors
+        if (usersData) {
+          const userAccount = usersData.find(u => u.id === profile.userId);
+          if (!userAccount || userAccount.isBlocked || userAccount.deletedAt) return false;
+        }
+        
         if (!profile.vendorName || profile.vendorName === 'New Vendor') return false;
         return true;
       })
@@ -172,7 +178,7 @@ function MenuContent() {
     setItemToDelete(null);
   };
 
-  const isLoading = profilesLoading || usersLoading || isVendorLoading || isMenuLoading;
+  const isLoading = profilesLoading || (user ? usersLoading : false) || isVendorLoading || isMenuLoading;
 
   // Render Storefront View
   if (vendorId) {
