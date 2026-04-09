@@ -39,7 +39,7 @@
     {
       "id": "about-dining",
       "description": "Students dining together",
-      "imageUrl": "https://picsum.photos/seed/about1/800/600",
+      "imageUrl": "https://lh3.googleusercontent.com/d/12TGzhj7pEE0L2Z8PC7XURKvkLdALTUZh",
       "imageHint": "students dining"
     },
     {
@@ -57,13 +57,13 @@
     {
       "id": "creator-3",
       "description": "Backend Engineer Profile",
-      "imageUrl": "https://lh3.googleusercontent.com/d/1S-Xz8Xngj9o933LO23gF-pynf4tDqONw",
+      "imageUrl": "https://lh3.googleusercontent.com/d/1IRw-f7iHDvCDNwAJ_2Dy47IJrCAKENLv",
       "imageHint": "person engineer"
     },
     {
       "id": "creator-4",
       "description": "Project Manager Profile",
-      "imageUrl": "https://lh3.googleusercontent.com/d/1S-Xz8Xngj9o933LO23gF-pynf4tDqONw",
+      "imageUrl": "https://lh3.googleusercontent.com/d/1clOIm7VzQn5EN6OeXeJFrph0l-xdOOQ9",
       "imageHint": "person manager"
     }
   ]
