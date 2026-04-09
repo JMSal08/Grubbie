@@ -27,7 +27,8 @@ import {
   LayoutList,
   QrCode,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Trash2
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -171,6 +172,24 @@ export default function VendorDashboard() {
     reader.readAsDataURL(file);
   };
 
+  const handleRemoveQr = () => {
+    if (!profileRef || !qrUploadType) return;
+
+    setIsQrSaving(true);
+    const field = qrUploadType === 'gcash' ? 'gcashQrUrl' : 'mayaQrUrl';
+    
+    updateDocumentNonBlocking(profileRef, {
+      [field]: "",
+      updatedAt: serverTimestamp()
+    });
+
+    setIsQrSaving(false);
+    toast({
+      title: "QR Code Removed",
+      description: `Your ${qrUploadType === 'gcash' ? 'GCash' : 'Maya'} payment QR has been removed.`,
+    });
+  };
+
   const displayedOrders = showHistory ? historyOrders : activeOrders;
 
   if (isUserLoading || isProfileLoading || isOrdersLoading) {
@@ -182,6 +201,8 @@ export default function VendorDashboard() {
   }
 
   if (!user || !profileData) return null;
+
+  const currentQr = qrUploadType === 'gcash' ? profileData.gcashQrUrl : profileData.mayaQrUrl;
 
   return (
     <div className="min-h-screen bg-secondary/10">
@@ -452,10 +473,10 @@ export default function VendorDashboard() {
               className="aspect-square w-full border-2 border-dashed rounded-3xl flex flex-col items-center justify-center bg-secondary/5 overflow-hidden relative group cursor-pointer"
               onClick={() => qrInputRef.current?.click()}
             >
-              {(qrUploadType === 'gcash' ? profileData.gcashQrUrl : profileData.mayaQrUrl) ? (
+              {currentQr ? (
                 <>
                   <img 
-                    src={qrUploadType === 'gcash' ? profileData.gcashQrUrl : profileData.mayaQrUrl} 
+                    src={currentQr} 
                     alt={`${qrUploadType} QR`} 
                     className="w-full h-full object-contain p-4"
                   />
@@ -481,15 +502,29 @@ export default function VendorDashboard() {
               />
             </div>
 
-            <Button 
-              className="w-full rounded-xl gap-2 h-12 font-bold"
-              variant="outline"
-              onClick={() => qrInputRef.current?.click()}
-              disabled={isQrSaving}
-            >
-              {isQrSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              Add Qr
-            </Button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button 
+                className="w-full rounded-xl gap-2 h-12 font-bold"
+                variant="outline"
+                onClick={() => qrInputRef.current?.click()}
+                disabled={isQrSaving}
+              >
+                {isQrSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                {currentQr ? 'Replace Qr' : 'Add Qr'}
+              </Button>
+
+              {currentQr && (
+                <Button 
+                  className="w-full rounded-xl gap-2 h-12 font-bold text-red-500 border-red-100 hover:bg-red-50 hover:text-red-600"
+                  variant="outline"
+                  onClick={handleRemoveQr}
+                  disabled={isQrSaving}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Remove
+                </Button>
+              )}
+            </div>
 
             <div className="bg-primary/5 p-4 rounded-2xl flex gap-3 items-start border border-primary/10">
               <Upload className="h-4 w-4 text-primary shrink-0 mt-0.5" />
