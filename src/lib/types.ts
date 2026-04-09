@@ -66,6 +66,7 @@ export interface Order {
   paymentMethod: string;
   paymentStatus: string;
   cancellationNote?: string;
+  receiptUrl?: string;
   createdAt: any;
   updatedAt: any;
 }

@@ -1,18 +1,20 @@
+
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Clock, CheckCircle2, Package, ChefHat, History, LayoutList, Loader2, Info, AlertCircle, Download } from 'lucide-react';
+import { Clock, CheckCircle2, Package, ChefHat, History, LayoutList, Loader2, Info, AlertCircle, Download, Upload } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc, updateDocumentNonBlocking } from '@/firebase';
+import { collection, query, where, doc, serverTimestamp } from 'firebase/firestore';
 import { Order } from '@/lib/types';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
 
 /**
  * Component to fetch and display the vendor's payment QR code for a specific order.
@@ -46,6 +48,85 @@ function OrderQR({ vendorId, paymentMethod }: { vendorId: string, paymentMethod:
           Save QR Image
         </a>
       </Button>
+    </div>
+  );
+}
+
+/**
+ * Component to handle payment receipt upload for cashless orders.
+ */
+function ReceiptUpload({ orderId, existingReceipt }: { orderId: string, existingReceipt?: string }) {
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const db = useFirestore();
+  const { toast } = useToast();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 700 * 1024) {
+      toast({
+        variant: "destructive",
+        title: "File too large",
+        description: "Please upload a receipt smaller than 700KB.",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      const orderRef = doc(db, 'orders', orderId);
+      
+      updateDocumentNonBlocking(orderRef, {
+        receiptUrl: dataUrl,
+        updatedAt: serverTimestamp()
+      });
+
+      setIsUploading(false);
+      toast({
+        title: "Receipt Uploaded",
+        description: "Your proof of payment has been sent to the vendor.",
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  if (existingReceipt) {
+    return (
+      <div className="mt-4 p-3 bg-green-50 border border-green-100 rounded-xl flex items-center gap-2 text-green-700">
+        <CheckCircle2 className="h-4 w-4" />
+        <span className="text-xs font-bold uppercase tracking-tight">Receipt Sent Successfully</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 space-y-3">
+      <div className="bg-yellow-50 border border-yellow-100 p-3 rounded-xl flex gap-3 items-start">
+        <AlertCircle className="h-4 w-4 text-yellow-600 shrink-0 mt-0.5" />
+        <p className="text-[10px] text-yellow-800 leading-tight">
+          <strong>Important:</strong> You only have one chance to send the receipt. Please ensure it is the correct image before uploading.
+        </p>
+      </div>
+      <Button 
+        variant="outline" 
+        className="w-full h-10 rounded-xl border-primary text-primary font-bold gap-2 hover:bg-primary/5"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={isUploading}
+      >
+        {isUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+        Upload Payment Receipt
+      </Button>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        className="hidden" 
+        accept="image/*" 
+        onChange={handleFileChange} 
+      />
     </div>
   );
 }
@@ -225,10 +306,13 @@ export default function OrdersPage() {
                   )}
 
                   {(order.paymentMethod === 'gcash' || order.paymentMethod === 'paymaya') && order.status !== 'cancelled' && order.status !== 'picked-up' && (
-                    <OrderQR vendorId={order.vendorId} paymentMethod={order.paymentMethod} />
+                    <>
+                      <OrderQR vendorId={order.vendorId} paymentMethod={order.paymentMethod} />
+                      <ReceiptUpload orderId={order.id} existingReceipt={order.receiptUrl} />
+                    </>
                   )}
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 mt-6">
                     <h4 className="font-bold text-[10px] text-accent uppercase tracking-widest border-b pb-1">Order Summary</h4>
                     {order.items?.map((item, idx) => (
                       <div key={idx} className="flex justify-between text-sm py-1 border-b border-dashed last:border-0">
