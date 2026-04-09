@@ -28,7 +28,9 @@ import {
   QrCode,
   Upload,
   Image as ImageIcon,
-  Trash2
+  Trash2,
+  FileText,
+  Search
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -53,6 +55,7 @@ export default function VendorDashboard() {
   
   const qrInputRef = useRef<HTMLInputElement>(null);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
+  const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [cancelNote, setCancelNote] = useState("");
   const [showHistory, setShowHistory] = useState(false);
   const [qrUploadType, setQrUploadType] = useState<'gcash' | 'maya' | null>(null);
@@ -369,7 +372,18 @@ export default function VendorDashboard() {
                         </TableCell>
                         {!showHistory && (
                           <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
+                            <div className="flex justify-end gap-2 items-center">
+                              {order.receiptUrl && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  className="h-8 rounded-full text-[10px] border-primary text-primary font-bold px-3 gap-1.5"
+                                  onClick={() => setViewingReceipt(order.receiptUrl!)}
+                                >
+                                  <FileText className="h-3 w-3" />
+                                  Receipt
+                                </Button>
+                              )}
                               {order.status === 'pending' && (
                                 <Button 
                                   size="sm" 
@@ -537,6 +551,26 @@ export default function VendorDashboard() {
           <DialogFooter>
             <Button variant="ghost" onClick={() => setQrUploadType(null)} className="rounded-full w-full">
               Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Receipt Viewer Dialog */}
+      <Dialog open={!!viewingReceipt} onOpenChange={(open) => !open && setViewingReceipt(null)}>
+        <DialogContent className="rounded-3xl max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-accent">Payment Receipt</DialogTitle>
+            <DialogDescription>Customer proof of payment for this order.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 flex justify-center bg-secondary/5 rounded-2xl overflow-hidden border">
+            {viewingReceipt && (
+              <img src={viewingReceipt} alt="Payment Receipt" className="max-w-full max-h-[60vh] object-contain" />
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="default" onClick={() => setViewingReceipt(null)} className="rounded-full px-8 font-bold">
+              Close Preview
             </Button>
           </DialogFooter>
         </DialogContent>
