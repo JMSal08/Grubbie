@@ -7,12 +7,48 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Clock, CheckCircle2, Package, ChefHat, History, LayoutList, Loader2, Info, AlertCircle } from 'lucide-react';
+import { Clock, CheckCircle2, Package, ChefHat, History, LayoutList, Loader2, Info, AlertCircle, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useUser, useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Order } from '@/lib/types';
 import { format } from 'date-fns';
+
+/**
+ * Component to fetch and display the vendor's payment QR code for a specific order.
+ */
+function OrderQR({ vendorId, paymentMethod }: { vendorId: string, paymentMethod: string }) {
+  const db = useFirestore();
+  const vendorProfileRef = useMemoFirebase(() => {
+    if (!db || !vendorId) return null;
+    return doc(db, 'users', vendorId, 'vendorProfile', 'profile');
+  }, [db, vendorId]);
+
+  const { data: profile, isLoading } = useDoc(vendorProfileRef);
+
+  if (isLoading) return <div className="flex justify-center p-4"><Loader2 className="h-4 w-4 animate-spin text-primary" /></div>;
+  if (!profile) return null;
+
+  const qrUrl = paymentMethod === 'gcash' ? profile.gcashQrUrl : profile.mayaQrUrl;
+  if (!qrUrl) return null;
+
+  return (
+    <div className="mb-6 p-4 bg-primary/5 rounded-2xl border border-dashed border-primary/20 flex flex-col items-center gap-3">
+      <div className="text-[10px] font-bold text-primary uppercase tracking-widest text-center">
+        Scan to Pay via {paymentMethod === 'gcash' ? 'GCash' : 'PayMaya'}
+      </div>
+      <div className="relative w-32 h-32 bg-white p-2 rounded-xl shadow-sm border border-primary/10">
+        <img src={qrUrl} alt="Payment QR" className="w-full h-full object-contain" />
+      </div>
+      <Button variant="ghost" size="sm" className="h-7 rounded-full text-[10px] font-bold gap-2 text-primary hover:bg-primary/10" asChild>
+        <a href={qrUrl} download={`grubbie-payment-${paymentMethod}.png`}>
+          <Download className="h-3 w-3" />
+          Save QR Image
+        </a>
+      </Button>
+    </div>
+  );
+}
 
 export default function OrdersPage() {
   const { user, isUserLoading } = useUser();
@@ -39,7 +75,6 @@ export default function OrdersPage() {
   const { liveOrders, historyOrders } = useMemo(() => {
     if (!orders) return { liveOrders: [], historyOrders: [] };
     
-    // Sort manually since we aren't using a composite index for createdAt/customerId yet
     const sorted = [...orders].sort((a, b) => {
       const dateA = a.createdAt?.seconds || 0;
       const dateB = b.createdAt?.seconds || 0;
@@ -187,6 +222,10 @@ export default function OrdersPage() {
                       </div>
                       <Progress value={statusStep(order.status)} className="h-1.5" />
                     </div>
+                  )}
+
+                  {(order.paymentMethod === 'gcash' || order.paymentMethod === 'paymaya') && order.status !== 'cancelled' && order.status !== 'picked-up' && (
+                    <OrderQR vendorId={order.vendorId} paymentMethod={order.paymentMethod} />
                   )}
 
                   <div className="space-y-3">
