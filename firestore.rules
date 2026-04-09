@@ -71,7 +71,7 @@ service cloud.firestore {
         allow get: if isOwner(userId) || isAdmin();
         allow list: if (isOwner(userId) && isEmailVerified()) || isAdmin();
         allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
+        allow update: if (isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId) || isAdmin();
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
 
@@ -81,7 +81,7 @@ service cloud.firestore {
       match /vendorProfile/{profileId} {
         allow read: if true;
         allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
-        allow update: if isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId) || isAdmin();
+        allow update: if (isExistingOwner(userId) && isEmailVerified() && request.resource.data.userId == userId) || isAdmin();
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
     }
