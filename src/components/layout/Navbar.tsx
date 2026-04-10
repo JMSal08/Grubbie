@@ -2,6 +2,7 @@
 "use client";
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShoppingCart, User as UserIcon, Menu, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +26,7 @@ import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 import { useCart } from '@/hooks/use-cart';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number }) {
   const { user } = useUser();
@@ -32,6 +34,8 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
   const auth = useAuth();
   const { toast } = useToast();
   const { totalCount } = useCart();
+
+  const logo = PlaceHolderImages.find(img => img.id === 'grubbie-logo');
 
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -65,7 +69,18 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl font-headline font-bold text-accent">Grubbie</span>
+            {logo ? (
+              <Image 
+                src={logo.imageUrl} 
+                alt="Grubbie Logo" 
+                width={120} 
+                height={40} 
+                className="object-contain h-10 w-auto"
+                data-ai-hint={logo.imageHint}
+              />
+            ) : (
+              <span className="text-2xl font-headline font-bold text-accent">Grubbie</span>
+            )}
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <Link href="/menu" className="text-sm font-medium hover:text-primary transition-colors">Menu</Link>

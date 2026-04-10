@@ -2,17 +2,21 @@
 "use client";
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Navbar } from '@/components/layout/Navbar';
 import { Button } from '@/components/ui/button';
 import { Zap, ShieldCheck, Utensils, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export default function Home() {
   const [cartCount, setCartCount] = useState(0);
   const { user } = useUser();
   const db = useFirestore();
+
+  const logo = PlaceHolderImages.find(img => img.id === 'grubbie-logo');
 
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
@@ -93,7 +97,18 @@ export default function Home() {
       <footer className="bg-accent text-accent-foreground py-16">
         <div className="container mx-auto px-4 grid md:grid-cols-4 gap-12">
           <div className="space-y-6">
-            <h2 className="text-3xl font-headline font-bold text-primary">Grubbie</h2>
+            {logo ? (
+              <Image 
+                src={logo.imageUrl} 
+                alt="Grubbie Logo" 
+                width={150} 
+                height={50} 
+                className="object-contain"
+                data-ai-hint={logo.imageHint}
+              />
+            ) : (
+              <h2 className="text-3xl font-headline font-bold text-primary">Grubbie</h2>
+            )}
             <p className="opacity-70">Empowering student dining through technology and convenience.</p>
           </div>
           <div className="space-y-4">

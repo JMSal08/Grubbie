@@ -1,6 +1,12 @@
 {
   "placeholderImages": [
     {
+      "id": "grubbie-logo",
+      "description": "Grubbie Logo",
+      "imageUrl": "https://picsum.photos/seed/grubbie-logo/400/200",
+      "imageHint": "grubbie logo"
+    },
+    {
       "id": "hero-food",
       "description": "Delicious campus meal",
       "imageUrl": "https://picsum.photos/seed/grubbie1/1200/800",
