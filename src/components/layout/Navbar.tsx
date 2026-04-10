@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -73,9 +72,9 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
               <Image 
                 src={logo.imageUrl} 
                 alt="Grubbie Logo" 
-                width={120} 
-                height={40} 
-                className="object-contain h-10 w-auto"
+                width={150} 
+                height={50} 
+                className="object-contain h-12 w-auto"
                 data-ai-hint={logo.imageHint}
               />
             ) : (
