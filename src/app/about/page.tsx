@@ -32,7 +32,7 @@ export default function AboutPage() {
               Revolutionizing Campus Dining
             </h1>
             <p className="text-xl opacity-80 max-w-2xl mx-auto leading-relaxed">
-              Grubbie was born out of a simple observation: students and staff spend too much time waiting in lines instead of enjoying their meals.
+              Skip the wait, never be late!
             </p>
           </div>
         </section>
@@ -43,7 +43,7 @@ export default function AboutPage() {
             <div className="space-y-6">
               <h2 className="text-3xl font-headline font-bold text-accent">Our Mission</h2>
               <p className="text-lg text-muted-foreground leading-relaxed">
-                To empower the school community by providing a seamless, digital-first food ordering experience that saves time, reduces stress, and supports local vendors.
+                To provide and offer a simple, digital way to order food. By saving time, cutting down stress, and giving vendors a boost.
               </p>
               <div className="space-y-4">
                 <div className="flex gap-4">
