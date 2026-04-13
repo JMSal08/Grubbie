@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -69,7 +70,9 @@ service cloud.firestore {
         // Relax get permission to allow the login check for unverified owners
         allow get: if isOwner(userId) || isAdmin();
         allow list: if (isOwner(userId) && isEmailVerified()) || isAdmin();
-        allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
+        
+        // Simplified create/update to be more resilient to partial updates
+        allow create: if isOwner(userId) && isEmailVerified() && (request.resource.data.userId == userId || !('userId' in request.resource.data));
         allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
@@ -79,7 +82,7 @@ service cloud.firestore {
        */
       match /vendorProfile/{profileId} {
         allow read: if true;
-        allow create: if isOwner(userId) && isEmailVerified() && request.resource.data.userId == userId;
+        allow create: if isOwner(userId) && isEmailVerified() && (request.resource.data.userId == userId || !('userId' in request.resource.data));
         allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }

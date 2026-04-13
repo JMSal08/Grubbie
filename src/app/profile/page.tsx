@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -80,9 +81,11 @@ export default function ProfilePage() {
 
     setIsSaving(true);
     
-    // We use the memoized ref to save
+    // Ensure userId and id are always present to satisfy security rules and maintain structure
     setDocumentNonBlocking(profileRef, {
       ...formData,
+      userId: user.uid,
+      id: 'profile',
       updatedAt: serverTimestamp(),
     }, { merge: true });
 

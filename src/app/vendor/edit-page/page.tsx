@@ -80,11 +80,12 @@ export default function VendorEditPage() {
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profileRef) return;
+    if (!profileRef || !user) return;
 
     setIsSaving(true);
     updateDocumentNonBlocking(profileRef, {
       ...formData,
+      userId: user.uid, // Explicitly include for consistency
       updatedAt: serverTimestamp(),
     });
 
