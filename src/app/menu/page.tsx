@@ -217,7 +217,7 @@ function MenuContent() {
                   <div className="flex items-center gap-3">
                     <h1 className="text-3xl md:text-5xl font-headline font-bold">{vendorProfile.vendorName}</h1>
                     <Badge className={vendorProfile.isOnline ? "bg-green-500" : "bg-red-500"}>
-                      {vendorProfile.isOnline ? "Online" : "OFFLINE"}
+                      {vendorProfile.isOnline ? "ONLINE" : "OFFLINE"}
                     </Badge>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-sm font-medium opacity-90">

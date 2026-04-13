@@ -32,7 +32,7 @@ export function VendorCard({ vendor }: VendorCardProps) {
             variant={vendor.isOnline ? "default" : "destructive"} 
             className={`backdrop-blur-md border-none ${vendor.isOnline ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
           >
-            {vendor.isOnline ? 'Online' : 'OFFLINE'}
+            {vendor.isOnline ? 'ONLINE' : 'OFFLINE'}
           </Badge>
         </div>
       </div>
