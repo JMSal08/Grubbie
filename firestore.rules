@@ -31,8 +31,16 @@ service cloud.firestore {
       return resource != null && isOwner(userId);
     }
 
+    /**
+     * Checks if the current user is involved in an order.
+     * Vendors are allowed even if not email verified (per admin-creation flow).
+     * Customers MUST be email verified to access order details.
+     */
     function isInvolvedInOrder(orderData) {
-      return isEmailVerified() && (request.auth.uid == orderData.customerId || request.auth.uid == orderData.vendorId);
+      return isSignedIn() && (
+        (request.auth.uid == orderData.vendorId) || 
+        (request.auth.uid == orderData.customerId && isEmailVerified())
+      );
     }
 
     // --- Collection Group Rules ---
@@ -53,14 +61,13 @@ service cloud.firestore {
      */
     match /users/{userId} {
       // Vendors are publicly visible.
-      // Everyone can get a vendor's doc if they query for it.
-      // Everyone can list users IF they only ask for vendors.
       allow get: if isOwner(userId) || isEmailVerified() || (resource != null && resource.data.userType == 'vendor') || isAdmin();
       allow list: if isEmailVerified() || (resource != null && resource.data.userType == 'vendor') || isAdmin();
       
       // Allow creation during signup or by admin
       allow create: if isOwner(userId) || isAdmin();
-      allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
+      // Allow owners to update their base doc (needed for profile synchronization and status updates)
+      allow update: if isExistingOwner(userId) || isAdmin();
       allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
 
       /**
@@ -80,9 +87,10 @@ service cloud.firestore {
        */
       match /vendorProfile/{profileId} {
         allow read: if true;
-        allow create: if (isOwner(userId) && isEmailVerified()) || isAdmin();
-        allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
-        allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
+        // Vendors bypass email verification for profile management as they are admin-created
+        allow create: if isOwner(userId) || isAdmin();
+        allow update: if isExistingOwner(userId) || isAdmin();
+        allow delete: if isOwner(userId) || isAdmin();
       }
     }
 
@@ -108,9 +116,10 @@ service cloud.firestore {
      */
     match /menuItems/{menuItemId} {
       allow get, list: if true;
-      allow create: if isEmailVerified() && (request.resource.data.vendorId == request.auth.uid || isAdmin());
-      allow update: if isEmailVerified() && (resource.data.vendorId == request.auth.uid || isAdmin());
-      allow delete: if isEmailVerified() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      // Vendors bypass email verification for menu management
+      allow create: if isSignedIn() && (request.resource.data.vendorId == request.auth.uid || isAdmin());
+      allow update: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
+      allow delete: if isSignedIn() && (resource.data.vendorId == request.auth.uid || isAdmin());
     }
 
     /**
@@ -118,7 +127,12 @@ service cloud.firestore {
      */
     match /orders/{orderId} {
       allow get: if (resource != null && isInvolvedInOrder(resource.data)) || isAdmin();
-      allow list: if (isEmailVerified() && (resource.data.customerId == request.auth.uid || resource.data.vendorId == request.auth.uid)) || isAdmin();
+      // Allow vendors to list their orders even without verification; customers still need it
+      allow list: if (isSignedIn() && (
+        (resource.data.vendorId == request.auth.uid) || 
+        (resource.data.customerId == request.auth.uid && isEmailVerified())
+      )) || isAdmin();
+      
       allow create: if isEmailVerified() && request.resource.data.customerId == request.auth.uid;
       allow update: if resource != null && (isInvolvedInOrder(resource.data) || isAdmin());
       allow delete: if isAdmin();
@@ -143,9 +157,10 @@ service cloud.firestore {
      * @description Reports submitted by vendors.
      */
     match /reports/{reportId} {
-      allow get: if (isEmailVerified() && resource.data.reportingVendorId == request.auth.uid) || isAdmin();
+      // Vendors bypass email verification for report access
+      allow get: if (isSignedIn() && resource.data.reportingVendorId == request.auth.uid) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isEmailVerified() && request.resource.data.reportingVendorId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.reportingVendorId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
   }
