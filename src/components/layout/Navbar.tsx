@@ -69,6 +69,7 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
   };
 
   const isVendor = userData?.userType === 'vendor';
+  const isAdmin = userData?.userType === 'admin' || !!adminData;
   const displayCartCount = totalCount > 0 ? totalCount : propCartCount;
 
   // Determine display name
@@ -95,8 +96,14 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
             )}
           </Link>
           <div className="hidden md:flex items-center gap-6">
-            {!isVendor && (
+            {!isVendor && !isAdmin && (
               <Link href="/menu" className="text-sm font-medium hover:text-primary transition-colors">Menu</Link>
+            )}
+            {isAdmin && (
+              <Link href="/admin" className="text-sm font-bold text-primary hover:opacity-80 transition-colors flex items-center gap-1">
+                <ShieldCheck className="h-4 w-4" />
+                Admin Portal
+              </Link>
             )}
             <Link 
               href={user ? "/orders" : "/auth/login"} 
@@ -117,7 +124,7 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
             />
           </div>
           
-          {user && !isVendor && (
+          {user && !isVendor && !isAdmin && (
             <Button variant="ghost" size="icon" asChild className="relative mr-2">
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />
@@ -157,11 +164,11 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
                 <>
                   <DropdownMenuItem asChild><Link href="/profile">Profile Settings</Link></DropdownMenuItem>
                   
-                  {userData?.userType === 'vendor' && (
+                  {isVendor && (
                     <DropdownMenuItem asChild><Link href="/vendor/dashboard">Vendor Dashboard</Link></DropdownMenuItem>
                   )}
                   
-                  {adminData && (
+                  {isAdmin && (
                     <DropdownMenuItem asChild className="text-primary font-bold">
                       <Link href="/admin">
                         <ShieldCheck className="mr-2 h-4 w-4" />
@@ -196,19 +203,22 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
                 <SheetTitle className="text-left font-headline font-bold text-accent">Menu</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4">
-                {!isVendor && (
+                {!isVendor && !isAdmin && (
                   <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg" asChild>
                     <Link href="/menu">Browse Menu</Link>
+                  </Button>
+                )}
+                {isAdmin && (
+                  <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg text-primary" asChild>
+                    <Link href="/admin" className="flex items-center gap-2">
+                      <ShieldCheck className="h-5 w-5" />
+                      Admin Portal
+                    </Link>
                   </Button>
                 )}
                 <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg" asChild>
                   <Link href={user ? "/orders" : "/auth/login"}>My Orders</Link>
                 </Button>
-                {adminData && (
-                  <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg text-primary" asChild>
-                    <Link href="/admin">Admin Portal</Link>
-                  </Button>
-                )}
               </div>
             </SheetContent>
           </Sheet>

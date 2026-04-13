@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -25,6 +24,7 @@ export default function Home() {
 
   const { data: userData } = useDoc(userDocRef);
   const isVendor = userData?.userType === 'vendor';
+  const isAdmin = userData?.userType === 'admin';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -42,7 +42,7 @@ export default function Home() {
                 Skip the wait, never be late!
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                {!isVendor && (
+                {!isVendor && !isAdmin && (
                   <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
                     <Link href="/menu">Browse Menu</Link>
                   </Button>
@@ -53,6 +53,15 @@ export default function Home() {
                     <Link href="/vendor/dashboard">
                       <LayoutDashboard className="h-6 w-6" />
                       Vendor Dashboard
+                    </Link>
+                  </Button>
+                )}
+
+                {isAdmin && (
+                  <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold gap-3" asChild>
+                    <Link href="/admin">
+                      <ShieldCheck className="h-6 w-6" />
+                      Admin Portal
                     </Link>
                   </Button>
                 )}
@@ -117,7 +126,8 @@ export default function Home() {
           <div className="space-y-4">
             <h4 className="font-bold text-lg">Quick Links</h4>
             <ul className="space-y-2 opacity-70">
-              {!isVendor && <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>}
+              {!isVendor && !isAdmin && <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>}
+              {isAdmin && <li><Link href="/admin" className="hover:text-primary">Admin Portal</Link></li>}
               <li><Link href="/orders" className="hover:text-primary">Track Order</Link></li>
               <li><Link href="/about" className="hover:text-primary">About Us</Link></li>
             </ul>

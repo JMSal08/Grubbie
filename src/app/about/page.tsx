@@ -1,13 +1,27 @@
-
 "use client";
 
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Utensils, Clock, ShieldCheck, Heart, Users, Lightbulb } from 'lucide-react';
+import { Utensils, Clock, ShieldCheck, Heart, Users, Lightbulb, ShieldAlert } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import Link from 'next/link';
 
 export default function AboutPage() {
+  const { user } = useUser();
+  const db = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'users', user.uid);
+  }, [db, user]);
+
+  const { data: userData } = useDoc(userDocRef);
+  const isVendor = userData?.userType === 'vendor';
+  const isAdmin = userData?.userType === 'admin';
+
   const creators = [
     { name: "Jan Michael Renz Salcedo", role: "Lead Developer", image: PlaceHolderImages.find(img => img.id === 'creator-1') },
     { name: "Dominique Luna", role: "UI Designer", image: PlaceHolderImages.find(img => img.id === 'creator-2') },
@@ -82,14 +96,14 @@ export default function AboutPage() {
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-3xl font-headline font-bold text-accent mb-12">The Minds Behind Grubbie</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {creators.map((creator, index) => (
+              {creators.map((creator, index) => (creator.image && (
                 <div key={index} className="space-y-4">
                   <div className="relative aspect-square rounded-3xl overflow-hidden shadow-lg group">
                     <img 
-                      src={creator.image?.imageUrl} 
+                      src={creator.image.imageUrl} 
                       alt={creator.name} 
                       className="object-cover w-full h-full transition-transform group-hover:scale-110"
-                      data-ai-hint={creator.image?.imageHint}
+                      data-ai-hint={creator.image.imageHint}
                     />
                   </div>
                   <div>
@@ -97,7 +111,7 @@ export default function AboutPage() {
                     <p className="text-sm text-muted-foreground">{creator.role}</p>
                   </div>
                 </div>
-              ))}
+              )))}
             </div>
           </div>
         </section>
@@ -141,14 +155,27 @@ export default function AboutPage() {
         {/* Call to action */}
         <section className="py-20 text-center container mx-auto px-4">
           <div className="bg-primary/10 rounded-[3rem] p-12 md:p-20">
-            <h2 className="text-3xl md:text-5xl font-headline font-bold text-accent mb-6">Ready to skip the line?</h2>
+            <h2 className="text-3xl md:text-5xl font-headline font-bold text-accent mb-6">
+              {isAdmin ? "Manage the Platform" : isVendor ? "Manage Your Kitchen" : "Ready to skip the line?"}
+            </h2>
             <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-              Join Grubbie today!
+              {isAdmin ? "Oversee Grubbie operations and ensure a smooth experience for everyone." : "Join Grubbie today!"}
             </p>
             <div className="flex flex-wrap justify-center gap-4">
-              <a href="/menu" className="bg-primary text-primary-foreground px-8 py-4 rounded-full font-bold hover:bg-primary/90 transition-colors">
-                Order Your First Meal
-              </a>
+              {isAdmin ? (
+                <Link href="/admin" className="bg-primary text-primary-foreground px-10 py-4 rounded-full font-bold hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-lg">
+                  <ShieldAlert className="h-5 w-5" />
+                  Go to Admin Portal
+                </Link>
+              ) : isVendor ? (
+                <Link href="/vendor/dashboard" className="bg-primary text-primary-foreground px-10 py-4 rounded-full font-bold hover:bg-primary/90 transition-colors shadow-lg">
+                  Vendor Dashboard
+                </Link>
+              ) : (
+                <Link href="/menu" className="bg-primary text-primary-foreground px-10 py-4 rounded-full font-bold hover:bg-primary/90 transition-colors shadow-lg">
+                  Order Your First Meal
+                </Link>
+              )}
             </div>
           </div>
         </section>
