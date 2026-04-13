@@ -16,12 +16,14 @@ import {
   Loader2, 
   Trash2, 
   Search,
-  X
+  X,
+  PlusCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -146,7 +148,15 @@ export default function AdminPortal() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-headline font-bold text-accent mb-8">Admin Oversight Portal</h1>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+          <h1 className="text-3xl font-headline font-bold text-accent">Admin Oversight Portal</h1>
+          <Button asChild className="rounded-full gap-2 px-6 h-12 font-bold shadow-lg bg-primary text-primary-foreground hover:bg-primary/90">
+            <Link href="/auth/signup">
+              <PlusCircle className="h-5 w-5" />
+              Create Vendor Account
+            </Link>
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <Card className="border-none shadow-sm">
