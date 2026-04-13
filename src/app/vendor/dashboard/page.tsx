@@ -113,7 +113,7 @@ export default function VendorDashboard() {
     });
 
     toast({
-      title: online ? "Kitchen is Online" : "Kitchen is Offline",
+      title: online ? "Kitchen is ONLINE" : "Kitchen is OFFLINE",
       description: online ? "Your store is now visible to customers." : "Customers can no longer see your store on the menu.",
     });
   };
@@ -226,7 +226,7 @@ export default function VendorDashboard() {
           <div className="flex flex-col sm:flex-row items-center gap-6 w-full md:w-auto">
             <div className="flex items-center gap-3 bg-secondary/30 px-6 py-3 rounded-full border">
               <Label htmlFor="online-status" className="font-bold text-sm uppercase tracking-wider cursor-pointer">
-                {profileData.isOnline ? 'Online' : 'Offline'}
+                {profileData.isOnline ? 'ONLINE' : 'OFFLINE'}
               </Label>
               <Switch 
                 id="online-status" 
@@ -359,7 +359,7 @@ export default function VendorDashboard() {
                             {order.items?.map((item: any) => `${item.quantity}x ${item.name}`).join(', ')}
                           </div>
                           <div className="text-[10px] font-bold text-accent mt-1 uppercase tracking-tighter">
-                            {order.paymentMethod} • ₱{order.totalAmount}
+                            {order.paymentMethod} • ₱{order.totalAmount} • Sched: {order.scheduledPickupDateTime ? format(new Date(order.scheduledPickupDateTime), 'h:mm a') : 'ASAP'}
                           </div>
                         </TableCell>
                         <TableCell>
