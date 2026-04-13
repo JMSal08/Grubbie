@@ -6,17 +6,28 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShieldAlert, Users, Store, Flag, ShieldCheck, Loader2 } from 'lucide-react';
+import { ShieldAlert, Users, Store, Flag, ShieldCheck, Loader2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminPortal() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
 
   // 1. Check if current user is in roles_admin (Source of truth for security)
   const adminDocRef = useMemoFirebase(() => {
@@ -75,6 +86,28 @@ export default function AdminPortal() {
       description: `Action applied successfully.`,
       variant: currentlyBlocked ? "default" : "destructive"
     });
+  };
+
+  const handleDeleteUser = () => {
+    if (!db || !userToDelete) return;
+    
+    // We try to delete the Firestore documents. 
+    // Subcollections should ideally be cleaned up as well.
+    const userRef = doc(db, 'users', userToDelete);
+    const customerProfileRef = doc(db, 'users', userToDelete, 'customerProfile', 'profile');
+    const vendorProfileRef = doc(db, 'users', userToDelete, 'vendorProfile', 'profile');
+
+    deleteDocumentNonBlocking(userRef);
+    deleteDocumentNonBlocking(customerProfileRef);
+    deleteDocumentNonBlocking(vendorProfileRef);
+
+    toast({
+      title: "Account Entry Removed",
+      description: "Firestore records deleted. Note: For full removal, please delete the Auth record in Firebase Console.",
+      variant: "destructive"
+    });
+    
+    setUserToDelete(null);
   };
 
   if (isUserLoading || isAdminLoading) {
@@ -172,15 +205,26 @@ export default function AdminPortal() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button 
-                          variant={u.isBlocked ? "outline" : "destructive"} 
-                          size="sm" 
-                          className="rounded-full"
-                          onClick={() => handleBlockUser(u.id, !!u.isBlocked)}
-                          disabled={u.id === user.uid} // Don't allow blocking self
-                        >
-                          {u.isBlocked ? "Unblock Account" : "Block Account"}
-                        </Button>
+                        <div className="flex justify-end items-center gap-2">
+                          <Button 
+                            variant={u.isBlocked ? "outline" : "destructive"} 
+                            size="sm" 
+                            className="rounded-full h-8"
+                            onClick={() => handleBlockUser(u.id, !!u.isBlocked)}
+                            disabled={u.id === user.uid} // Don't allow blocking self
+                          >
+                            {u.isBlocked ? "Unblock" : "Block"}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-destructive hover:bg-red-50 hover:text-red-600"
+                            onClick={() => setUserToDelete(u.id)}
+                            disabled={u.id === user.uid}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -196,6 +240,30 @@ export default function AdminPortal() {
             )}
           </CardContent>
         </Card>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!userToDelete} onOpenChange={(open) => !open && setUserToDelete(null)}>
+          <AlertDialogContent className="rounded-[2rem]">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-2xl font-headline font-bold text-destructive">Delete Account Record?</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-4">
+                <p>This will permanently remove the user entry and their associated profiles from the database.</p>
+                <div className="bg-destructive/5 p-4 rounded-xl border border-destructive/10 text-destructive font-medium text-xs">
+                  <strong>Important:</strong> Client-side deletion cannot remove the Auth record. To fully delete the account, you must also delete UID: <strong>{userToDelete}</strong> from the Firebase Authentication console.
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-3">
+              <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={handleDeleteUser} 
+                className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 px-8 font-bold"
+              >
+                Delete Firestore Entry
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
