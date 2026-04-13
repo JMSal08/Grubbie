@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, User as UserIcon, Menu, Search, LogOut, ShieldCheck } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, Menu, Search, LogOut, ShieldCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -29,7 +29,7 @@ import { useCart } from '@/hooks/use-cart';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number }) {
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const auth = useAuth();
   const { toast } = useToast();
@@ -37,6 +37,7 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
 
   const logo = PlaceHolderImages.find(img => img.id === 'grubbie-logo');
 
+  // Fetch base user data to get userType
   const userDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'users', user.uid);
@@ -50,6 +51,15 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
   const { data: userData } = useDoc(userDocRef);
   const { data: adminData } = useDoc(adminDocRef);
 
+  // Fetch specific profile data to get the display name
+  const profileRef = useMemoFirebase(() => {
+    if (!db || !user || !userData) return null;
+    const collectionName = userData.userType === 'vendor' ? 'vendorProfile' : 'customerProfile';
+    return doc(db, 'users', user.uid, collectionName, 'profile');
+  }, [db, user, userData]);
+
+  const { data: profileData, isLoading: isProfileLoading } = useDoc(profileRef);
+
   const handleLogout = () => {
     signOut(auth).then(() => {
       toast({
@@ -60,9 +70,12 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
   };
 
   const isVendor = userData?.userType === 'vendor';
-
-  // Use the totalCount from context if it's greater than 0, otherwise fallback to prop
   const displayCartCount = totalCount > 0 ? totalCount : propCartCount;
+
+  // Determine display name
+  const displayName = userData?.userType === 'vendor' 
+    ? profileData?.vendorName 
+    : (profileData?.firstName || user?.displayName);
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -104,7 +117,7 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
           </div>
           
           {user && !isVendor && (
-            <Button variant="ghost" size="icon" asChild className="relative">
+            <Button variant="ghost" size="icon" asChild className="relative mr-2">
               <Link href="/cart">
                 <ShoppingCart className="h-5 w-5" />
                 {displayCartCount > 0 && (
@@ -118,12 +131,26 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <UserIcon className="h-5 w-5" />
+              <Button variant="ghost" className="rounded-full gap-2 px-2 hover:bg-secondary/50">
+                <div className="bg-primary/10 p-1.5 rounded-full text-primary">
+                  <UserIcon className="h-4 w-4" />
+                </div>
+                {user && !isUserLoading && (
+                  <span className="hidden md:inline-block text-sm font-bold text-accent pr-1">
+                    {isProfileLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : (displayName || 'Account')}
+                  </span>
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>
+                {user ? (
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold truncate">{displayName || 'User'}</span>
+                    <span className="text-xs text-muted-foreground font-normal truncate">{user.email}</span>
+                  </div>
+                ) : 'My Account'}
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               {user ? (
                 <>
