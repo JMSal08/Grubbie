@@ -55,11 +55,11 @@ service cloud.firestore {
       // Vendors are publicly visible.
       // Everyone can get a vendor's doc if they query for it.
       // Everyone can list users IF they only ask for vendors.
-      allow get: if isOwner(userId) || isEmailVerified() || (resource != null && resource.data.userType == 'vendor');
-      allow list: if isEmailVerified() || (resource != null && resource.data.userType == 'vendor');
+      allow get: if isOwner(userId) || isEmailVerified() || (resource != null && resource.data.userType == 'vendor') || isAdmin();
+      allow list: if isEmailVerified() || (resource != null && resource.data.userType == 'vendor') || isAdmin();
       
-      // Allow creation during signup
-      allow create: if isOwner(userId);
+      // Allow creation during signup or by admin
+      allow create: if isOwner(userId) || isAdmin();
       allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
       allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
 
@@ -67,12 +67,10 @@ service cloud.firestore {
        * @description Subcollection for Customer-specific profile data.
        */
       match /customerProfile/{profileId} {
-        // Relax get permission to allow the login check for unverified owners
         allow get: if isOwner(userId) || isAdmin();
         allow list: if (isOwner(userId) && isEmailVerified()) || isAdmin();
         
-        // Simplified create/update to be more resilient to partial updates
-        allow create: if isOwner(userId) && isEmailVerified() && (request.resource.data.userId == userId || !('userId' in request.resource.data));
+        allow create: if (isOwner(userId) && isEmailVerified()) || isAdmin();
         allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
@@ -82,7 +80,7 @@ service cloud.firestore {
        */
       match /vendorProfile/{profileId} {
         allow read: if true;
-        allow create: if isOwner(userId) && isEmailVerified() && (request.resource.data.userId == userId || !('userId' in request.resource.data));
+        allow create: if (isOwner(userId) && isEmailVerified()) || isAdmin();
         allow update: if (isExistingOwner(userId) && isEmailVerified()) || isAdmin();
         allow delete: if (isOwner(userId) && isEmailVerified()) || isAdmin();
       }
@@ -110,7 +108,7 @@ service cloud.firestore {
      */
     match /menuItems/{menuItemId} {
       allow get, list: if true;
-      allow create: if isEmailVerified() && request.resource.data.vendorId == request.auth.uid;
+      allow create: if isEmailVerified() && (request.resource.data.vendorId == request.auth.uid || isAdmin());
       allow update: if isEmailVerified() && (resource.data.vendorId == request.auth.uid || isAdmin());
       allow delete: if isEmailVerified() && (resource.data.vendorId == request.auth.uid || isAdmin());
     }

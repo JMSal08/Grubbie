@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { useAuth, useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { initiateEmailSignIn, initiateEmailVerification } from '@/firebase/non-blocking-login';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { useRouter } from 'next/navigation';
@@ -30,79 +31,91 @@ export default function LoginPage() {
     const checkVerificationAndProfile = async () => {
       if (user && !isLoading) {
         const userRef = doc(db, 'users', user.uid);
-        const userSnap = await getDoc(userRef);
+        
+        try {
+          const userSnap = await getDoc(userRef);
 
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          const isVendor = userData.userType === 'vendor';
-          
-          // 1. Check if account is suspended
-          if (userData.isBlocked === true) {
-            toast({
-              variant: "destructive",
-              title: "Access Denied",
-              description: "This account is suspended. Please contact support if you believe this is an error.",
-            });
-            await signOut(auth);
-            return;
-          }
-
-          // 2. Enforce verification for customers
-          if (!user.emailVerified && !isVendor) {
-            toast({
-              variant: "destructive",
-              title: "Email Not Verified",
-              description: "Please verify your email before logging in. We've sent you a link.",
-              action: (
-                <Button variant="outline" size="sm" onClick={() => initiateEmailVerification(user)}>
-                  Resend
-                </Button>
-              ),
-            });
-            await signOut(auth);
-            return;
-          }
-          
-          // 3. Redirect admin users immediately
-          if (userData.userType === 'admin') {
-            router.push('/admin');
-            return;
-          }
-
-          // 4. Initialize profile if missing
-          if (userData.userType === 'customer') {
-            const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
-            const customerSnap = await getDoc(customerRef);
-            if (!customerSnap.exists()) {
-              setDocumentNonBlocking(customerRef, {
-                id: 'profile',
-                userId: user.uid,
-                firstName: '',
-                lastName: '',
-                phoneNumber: '',
-                lastLoginAt: serverTimestamp(),
-              }, { merge: true });
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const isVendor = userData.userType === 'vendor';
+            
+            // 1. Check if account is suspended
+            if (userData.isBlocked === true) {
+              toast({
+                variant: "destructive",
+                title: "Access Denied",
+                description: "This account is suspended. Please contact support if you believe this is an error.",
+              });
+              await signOut(auth);
+              return;
             }
-          } else if (userData.userType === 'vendor') {
-            const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
-            const vendorSnap = await getDoc(vendorRef);
-            if (!vendorSnap.exists()) {
-              setDocumentNonBlocking(vendorRef, {
-                id: 'profile',
-                userId: user.uid,
-                vendorName: 'New Vendor',
-                description: '',
-                location: 'Cafeteria',
-                contactNumber: '',
-                openingTime: '08:00',
-                closingTime: '20:00',
-                lastLoginAt: serverTimestamp(),
-                isOnline: false,
-              }, { merge: true });
+
+            // 2. Enforce verification for customers
+            if (!user.emailVerified && !isVendor) {
+              toast({
+                variant: "destructive",
+                title: "Email Not Verified",
+                description: "Please verify your email before logging in. We've sent you a link.",
+                action: (
+                  <Button variant="outline" size="sm" onClick={() => initiateEmailVerification(user)}>
+                    Resend
+                  </Button>
+                ),
+              });
+              await signOut(auth);
+              return;
             }
+            
+            // 3. Redirect admin users immediately
+            if (userData.userType === 'admin') {
+              router.push('/admin');
+              return;
+            }
+
+            // 4. Initialize profile if missing
+            if (userData.userType === 'customer') {
+              const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
+              const customerSnap = await getDoc(customerRef);
+              if (!customerSnap.exists()) {
+                setDocumentNonBlocking(customerRef, {
+                  id: 'profile',
+                  userId: user.uid,
+                  firstName: '',
+                  lastName: '',
+                  phoneNumber: '',
+                  lastLoginAt: serverTimestamp(),
+                }, { merge: true });
+              }
+            } else if (userData.userType === 'vendor') {
+              const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
+              const vendorSnap = await getDoc(vendorRef);
+              if (!vendorSnap.exists()) {
+                setDocumentNonBlocking(vendorRef, {
+                  id: 'profile',
+                  userId: user.uid,
+                  vendorName: 'New Vendor',
+                  description: '',
+                  location: 'Cafeteria',
+                  contactNumber: '',
+                  openingTime: '08:00',
+                  closingTime: '20:00',
+                  lastLoginAt: serverTimestamp(),
+                  isOnline: false,
+                }, { merge: true });
+              }
+            }
+            
+            router.push('/');
           }
-          
-          router.push('/');
+        } catch (error: any) {
+          if (error.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'get',
+            }));
+          } else {
+            console.error("Profile check error:", error);
+          }
         }
       }
     };
