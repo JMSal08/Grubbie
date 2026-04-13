@@ -31,11 +31,16 @@ export default function AdminPortal() {
 
   useEffect(() => {
     if (!isUserLoading && !isAdminLoading) {
-      if (!user || !adminData) {
+      if (!user) {
+        router.push('/auth/login');
+        return;
+      }
+      
+      if (!adminData) {
         toast({
           variant: "destructive",
           title: "Access Denied",
-          description: "You do not have administrative privileges.",
+          description: `UID: ${user.uid} is not registered in the 'roles_admin' collection.`,
         });
         router.push('/');
       }
