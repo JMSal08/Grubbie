@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -30,27 +29,29 @@ export default function LoginPage() {
     // System check for email verification and profile creation
     const checkVerificationAndProfile = async () => {
       if (user && !isLoading) {
-        if (!user.emailVerified) {
-          toast({
-            variant: "destructive",
-            title: "Email Not Verified",
-            description: "Please verify your email before logging in. We've sent you a link.",
-            action: (
-              <Button variant="outline" size="sm" onClick={() => initiateEmailVerification(user)}>
-                Resend
-              </Button>
-            ),
-          });
-          await signOut(auth);
-          return;
-        }
-
-        // Check if user document exists to determine if we need to initialize profile
+        // Check user record first to see if it's a vendor (who can bypass verification)
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
           const userData = userSnap.data();
+          const isVendor = userData.userType === 'vendor';
+          
+          // Only enforce verification for customers
+          if (!user.emailVerified && !isVendor) {
+            toast({
+              variant: "destructive",
+              title: "Email Not Verified",
+              description: "Please verify your email before logging in. We've sent you a link.",
+              action: (
+                <Button variant="outline" size="sm" onClick={() => initiateEmailVerification(user)}>
+                  Resend
+                </Button>
+              ),
+            });
+            await signOut(auth);
+            return;
+          }
           
           // Redirect admin users immediately
           if (userData.userType === 'admin') {
@@ -58,7 +59,7 @@ export default function LoginPage() {
             return;
           }
 
-          // If verified but profile doesn't exist, create it now
+          // If verified/bypassed but profile doesn't exist, create it now
           if (userData.userType === 'customer') {
             const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
             const customerSnap = await getDoc(customerRef);
@@ -76,6 +77,7 @@ export default function LoginPage() {
             const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
             const vendorSnap = await getDoc(vendorRef);
             if (!vendorSnap.exists()) {
+              // Basic initialization if missing
               setDocumentNonBlocking(vendorRef, {
                 id: 'profile',
                 userId: user.uid,
