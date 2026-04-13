@@ -30,7 +30,8 @@ import {
   Image as ImageIcon,
   Trash2,
   FileText,
-  Search
+  Search,
+  AlertCircle
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
@@ -55,6 +56,7 @@ export default function VendorDashboard() {
   
   const qrInputRef = useRef<HTMLInputElement>(null);
   const [cancellingOrder, setCancellingOrder] = useState<string | null>(null);
+  const [confirmingAcceptNoReceipt, setConfirmingAcceptNoReceipt] = useState<string | null>(null);
   const [viewingReceipt, setViewingReceipt] = useState<string | null>(null);
   const [cancelNote, setCancelNote] = useState("");
   const [showHistory, setShowHistory] = useState(false);
@@ -139,6 +141,21 @@ export default function VendorDashboard() {
     if (status === 'cancelled') {
       setCancellingOrder(null);
       setCancelNote("");
+    }
+
+    if (status === 'preparing') {
+      setConfirmingAcceptNoReceipt(null);
+    }
+  };
+
+  const handleAcceptClick = (order: Order) => {
+    const isCashless = order.paymentMethod === 'gcash' || order.paymentMethod === 'paymaya';
+    const hasNoReceipt = !order.receiptUrl;
+
+    if (isCashless && hasNoReceipt) {
+      setConfirmingAcceptNoReceipt(order.id);
+    } else {
+      updateOrderStatus(order.id, 'preparing');
     }
   };
 
@@ -388,7 +405,7 @@ export default function VendorDashboard() {
                                 <Button 
                                   size="sm" 
                                   className="h-8 rounded-full text-[10px] bg-primary text-primary-foreground font-bold"
-                                  onClick={() => updateOrderStatus(order.id, 'preparing')}
+                                  onClick={() => handleAcceptClick(order)}
                                 >
                                   Accept
                                 </Button>
@@ -469,6 +486,32 @@ export default function VendorDashboard() {
           </div>
         </div>
       </main>
+
+      {/* Accept Without Receipt Confirmation */}
+      <Dialog open={!!confirmingAcceptNoReceipt} onOpenChange={(open) => !open && setConfirmingAcceptNoReceipt(null)}>
+        <DialogContent className="rounded-3xl max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-headline font-bold text-accent flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              Receipt Missing
+            </DialogTitle>
+            <DialogDescription className="pt-2">
+              The customer hasn't sent a picture of their GCash/PayMaya receipt yet. Are you sure you want to start preparing this order?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Button variant="ghost" onClick={() => setConfirmingAcceptNoReceipt(null)} className="rounded-full flex-1">
+              Wait for Receipt
+            </Button>
+            <Button 
+              className="rounded-full flex-1 font-bold"
+              onClick={() => confirmingAcceptNoReceipt && updateOrderStatus(confirmingAcceptNoReceipt, 'preparing')}
+            >
+              Prepare Anyway
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* QR Upload Dialog */}
       <Dialog open={!!qrUploadType} onOpenChange={(open) => !open && setQrUploadType(null)}>
