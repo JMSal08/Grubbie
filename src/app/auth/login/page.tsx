@@ -51,6 +51,12 @@ export default function LoginPage() {
         if (userSnap.exists()) {
           const userData = userSnap.data();
           
+          // Redirect admin users immediately
+          if (userData.userType === 'admin') {
+            router.push('/admin');
+            return;
+          }
+
           // If verified but profile doesn't exist, create it now
           if (userData.userType === 'customer') {
             const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
