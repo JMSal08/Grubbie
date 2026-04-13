@@ -6,7 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ShieldAlert, Users, Store, Flag, ShieldCheck, Loader2, Trash2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { 
+  ShieldAlert, 
+  Users, 
+  Store, 
+  Flag, 
+  ShieldCheck, 
+  Loader2, 
+  Trash2, 
+  Search,
+  X
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { doc, collection, query, serverTimestamp } from 'firebase/firestore';
@@ -28,6 +39,7 @@ export default function AdminPortal() {
   const db = useFirestore();
   const router = useRouter();
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   // 1. Check if current user is in roles_admin (Source of truth for security)
   const adminDocRef = useMemoFirebase(() => {
@@ -45,7 +57,18 @@ export default function AdminPortal() {
 
   const { data: usersData, isLoading: isUsersListLoading } = useCollection(allUsersQuery);
 
-  // 3. Derive stats from real data
+  // 3. Derive stats and filtered list from real data
+  const filteredUsers = useMemo(() => {
+    if (!usersData) return [];
+    if (!searchTerm.trim()) return usersData;
+    
+    const term = searchTerm.toLowerCase();
+    return usersData.filter(u => 
+      u.email?.toLowerCase().includes(term) || 
+      u.id?.toLowerCase().includes(term)
+    );
+  }, [usersData, searchTerm]);
+
   const stats = useMemo(() => {
     if (!usersData) return { customers: 0, vendors: 0 };
     return {
@@ -65,7 +88,7 @@ export default function AdminPortal() {
         toast({
           variant: "destructive",
           title: "Access Denied",
-          description: `UID: ${user.uid} is not registered in the root 'roles_admin' collection.`,
+          description: `UID: ${user.uid} is not authorized to access this portal.`,
         });
         router.push('/');
       }
@@ -91,8 +114,6 @@ export default function AdminPortal() {
   const handleDeleteUser = () => {
     if (!db || !userToDelete) return;
     
-    // We try to delete the Firestore documents. 
-    // Subcollections should ideally be cleaned up as well.
     const userRef = doc(db, 'users', userToDelete);
     const customerProfileRef = doc(db, 'users', userToDelete, 'customerProfile', 'profile');
     const vendorProfileRef = doc(db, 'users', userToDelete, 'vendorProfile', 'profile');
@@ -103,7 +124,7 @@ export default function AdminPortal() {
 
     toast({
       title: "Account Entry Removed",
-      description: "Firestore records deleted. Note: For full removal, please delete the Auth record in Firebase Console.",
+      description: "Firestore records deleted. Remember to also delete the Auth record if necessary.",
       variant: "destructive"
     });
     
@@ -159,10 +180,29 @@ export default function AdminPortal() {
 
         <Card className="border-none shadow-md overflow-hidden">
           <CardHeader className="bg-white border-b py-6">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
               <div>
-                <CardTitle className="font-headline font-bold">User Management</CardTitle>
+                <CardTitle className="font-headline font-bold text-2xl">User Management</CardTitle>
                 <p className="text-sm text-muted-foreground">Manage roles, block accounts, and resolve disputes</p>
+              </div>
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search email or UID..." 
+                  className="pl-10 h-11 rounded-xl bg-secondary/20 border-none"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                {searchTerm && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full hover:bg-transparent"
+                    onClick={() => setSearchTerm('')}
+                  >
+                    <X className="h-4 w-4 text-muted-foreground" />
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -175,21 +215,21 @@ export default function AdminPortal() {
               <Table>
                 <TableHeader className="bg-secondary/30">
                   <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead className="font-bold">User Information</TableHead>
+                    <TableHead className="font-bold">Account Role</TableHead>
+                    <TableHead className="font-bold">Current Status</TableHead>
+                    <TableHead className="text-right font-bold">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {usersData?.map((u) => (
-                    <TableRow key={u.id}>
+                  {filteredUsers.map((u) => (
+                    <TableRow key={u.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell>
                         <div className="font-bold">{u.email}</div>
-                        <div className="text-[10px] text-muted-foreground font-mono">{u.id}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono bg-muted/50 inline-block px-1 rounded">{u.id}</div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="capitalize px-3">
+                        <Badge variant="outline" className="capitalize px-3 font-semibold">
                           {u.userType}
                         </Badge>
                       </TableCell>
@@ -209,11 +249,11 @@ export default function AdminPortal() {
                           <Button 
                             variant={u.isBlocked ? "outline" : "destructive"} 
                             size="sm" 
-                            className="rounded-full h-8"
+                            className="rounded-full h-8 px-4"
                             onClick={() => handleBlockUser(u.id, !!u.isBlocked)}
-                            disabled={u.id === user.uid} // Don't allow blocking self
+                            disabled={u.id === user.uid}
                           >
-                            {u.isBlocked ? "Unblock" : "Block"}
+                            {u.isBlocked ? "Unblock Account" : "Block Account"}
                           </Button>
                           <Button
                             variant="ghost"
@@ -228,10 +268,10 @@ export default function AdminPortal() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {(!usersData || usersData.length === 0) && (
+                  {filteredUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
-                        No users found.
+                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
+                        {searchTerm ? `No users found matching "${searchTerm}"` : "No registered users found."}
                       </TableCell>
                     </TableRow>
                   )}
@@ -247,9 +287,9 @@ export default function AdminPortal() {
             <AlertDialogHeader>
               <AlertDialogTitle className="text-2xl font-headline font-bold text-destructive">Delete Account Record?</AlertDialogTitle>
               <AlertDialogDescription className="space-y-4">
-                <p>This will permanently remove the user entry and their associated profiles from the database.</p>
+                <p>This will permanently remove the Firestore entry and profiles for this user. This action is irreversible.</p>
                 <div className="bg-destructive/5 p-4 rounded-xl border border-destructive/10 text-destructive font-medium text-xs">
-                  <strong>Important:</strong> Client-side deletion cannot remove the Auth record. To fully delete the account, you must also delete UID: <strong>{userToDelete}</strong> from the Firebase Authentication console.
+                  <strong>Note:</strong> Client-side deletion does not remove the Authentication login record. To fully delete the account, you must also remove UID: <strong>{userToDelete}</strong> from the Firebase Auth console.
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
