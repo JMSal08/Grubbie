@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -30,12 +29,14 @@ export default function AdminPortal() {
   const { data: adminData, isLoading: isAdminLoading } = useDoc(adminDocRef);
 
   useEffect(() => {
+    // Only check permissions once both the user and the admin document check have settled
     if (!isUserLoading && !isAdminLoading) {
       if (!user) {
         router.push('/auth/login');
         return;
       }
       
+      // If we have a user but the admin document check returned null, they aren't authorized
       if (!adminData) {
         toast({
           variant: "destructive",
@@ -64,6 +65,7 @@ export default function AdminPortal() {
     );
   }
 
+  // Final safety check: if everything is loaded and we don't have admin data, render nothing (useEffect will redirect)
   if (!user || !adminData) return null;
 
   return (
