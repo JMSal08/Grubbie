@@ -40,7 +40,7 @@ export default function AdminPortal() {
         toast({
           variant: "destructive",
           title: "Access Denied",
-          description: `UID: ${user.uid} is not registered in the 'roles_admin' collection.`,
+          description: `UID: ${user.uid} is not registered in the root 'roles_admin' collection.`,
         });
         router.push('/');
       }
