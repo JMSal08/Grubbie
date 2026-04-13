@@ -2,9 +2,8 @@
 "use client";
 
 import Image from 'next/image';
-import { Hammer, ArrowLeft, Mail } from 'lucide-react';
+import { Hammer, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 /**
@@ -54,12 +53,6 @@ export default function MaintenancePage() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
-              <Button size="lg" className="rounded-full px-10 h-14 font-bold text-lg shadow-lg" asChild>
-                <Link href="/">
-                  <ArrowLeft className="h-5 w-5 mr-2" />
-                  Return Home
-                </Link>
-              </Button>
               <Button size="lg" variant="outline" className="rounded-full px-10 h-14 font-bold text-lg border-accent text-accent hover:bg-accent hover:text-white transition-all" asChild>
                 <a href="mailto:support@grubbie.com">
                   <Mail className="h-5 w-5 mr-2" />
