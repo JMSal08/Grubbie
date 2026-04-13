@@ -26,10 +26,9 @@ export default function LoginPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // System check for email verification and profile creation
+    // System check for email verification, profile creation, and account status
     const checkVerificationAndProfile = async () => {
       if (user && !isLoading) {
-        // Check user record first to see if it's a vendor (who can bypass verification)
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
 
@@ -37,7 +36,18 @@ export default function LoginPage() {
           const userData = userSnap.data();
           const isVendor = userData.userType === 'vendor';
           
-          // Only enforce verification for customers
+          // 1. Check if account is suspended
+          if (userData.isBlocked === true) {
+            toast({
+              variant: "destructive",
+              title: "Access Denied",
+              description: "This account is suspended. Please contact support if you believe this is an error.",
+            });
+            await signOut(auth);
+            return;
+          }
+
+          // 2. Enforce verification for customers
           if (!user.emailVerified && !isVendor) {
             toast({
               variant: "destructive",
@@ -53,13 +63,13 @@ export default function LoginPage() {
             return;
           }
           
-          // Redirect admin users immediately
+          // 3. Redirect admin users immediately
           if (userData.userType === 'admin') {
             router.push('/admin');
             return;
           }
 
-          // If verified/bypassed but profile doesn't exist, create it now
+          // 4. Initialize profile if missing
           if (userData.userType === 'customer') {
             const customerRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
             const customerSnap = await getDoc(customerRef);
@@ -77,7 +87,6 @@ export default function LoginPage() {
             const vendorRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
             const vendorSnap = await getDoc(vendorRef);
             if (!vendorSnap.exists()) {
-              // Basic initialization if missing
               setDocumentNonBlocking(vendorRef, {
                 id: 'profile',
                 userId: user.uid,
