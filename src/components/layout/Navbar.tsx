@@ -1,8 +1,9 @@
+
 "use client";
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, User as UserIcon, Menu, Search, LogOut } from 'lucide-react';
+import { ShoppingCart, User as UserIcon, Menu, Search, LogOut, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -72,9 +73,9 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
               <Image 
                 src={logo.imageUrl} 
                 alt="Grubbie Logo" 
-                width={150} 
-                height={50} 
-                className="object-contain h-12 w-auto"
+                width={180} 
+                height={60} 
+                className="object-contain h-14 w-auto"
                 data-ai-hint={logo.imageHint}
               />
             ) : (
@@ -133,7 +134,12 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
                   )}
                   
                   {adminData && (
-                    <DropdownMenuItem asChild><Link href="/admin">Admin Portal</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild className="text-primary font-bold">
+                      <Link href="/admin">
+                        <ShieldCheck className="mr-2 h-4 w-4" />
+                        Admin Portal
+                      </Link>
+                    </DropdownMenuItem>
                   )}
                   
                   <DropdownMenuSeparator />
@@ -165,6 +171,11 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
                 <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg" asChild>
                   <Link href={user ? "/orders" : "/auth/login"}>My Orders</Link>
                 </Button>
+                {adminData && (
+                  <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg text-primary" asChild>
+                    <Link href="/admin">Admin Portal</Link>
+                  </Button>
+                )}
               </div>
             </SheetContent>
           </Sheet>

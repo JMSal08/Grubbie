@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -20,7 +21,7 @@ export default function AdminPortal() {
   const db = useFirestore();
   const router = useRouter();
 
-  // Check if current user is in roles_admin
+  // Check if current user is in roles_admin (Source of truth for security)
   const adminDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'roles_admin', user.uid);
