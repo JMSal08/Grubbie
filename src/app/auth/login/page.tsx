@@ -132,10 +132,19 @@ export default function LoginPage() {
       })
       .catch((error: any) => {
         setIsLoading(false);
+
+        let message = "Invalid credentials provided.";
+        // Sanitize common auth errors to a simple "Invalid Credentials" message
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+          message = "Invalid Credentials";
+        } else if (error.code === 'auth/too-many-requests') {
+          message = "Too many failed attempts. Please try again later.";
+        }
+
         toast({
           variant: "destructive",
           title: "Login Failed",
-          description: error.message || "Invalid credentials provided.",
+          description: message,
         });
       });
   };
