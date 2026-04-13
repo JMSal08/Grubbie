@@ -39,6 +39,7 @@ export default function CartPage() {
     return doc(db, 'users', user.uid);
   }, [db, user]);
   const { data: userData } = useDoc(userDocRef);
+  const isVendor = userData?.userType === 'vendor';
 
   // Get unique vendor IDs from the cart to check payment support
   const vendorIdsInCart = useMemo(() => 
@@ -245,9 +246,11 @@ export default function CartPage() {
             {items.length === 0 && (
               <div className="text-center py-20 bg-white rounded-3xl border border-dashed">
                 <p className="text-muted-foreground mb-4">Your cart is empty.</p>
-                <Button variant="default" asChild className="rounded-full px-8">
-                  <a href="/menu">Browse Menu</a>
-                </Button>
+                {!isVendor && (
+                  <Button variant="default" asChild className="rounded-full px-8">
+                    <Link href="/menu">Browse Menu</Link>
+                  </Button>
+                )}
               </div>
             )}
           </div>

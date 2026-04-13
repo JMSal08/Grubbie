@@ -81,6 +81,7 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto flex h-24 items-center justify-between px-4">
         <div className="flex items-center gap-8">
+          <link rel="icon" href="/favicon.ico" />
           <Link href="/" className="flex items-center space-x-2">
             {logo ? (
               <Image 
@@ -96,7 +97,9 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
             )}
           </Link>
           <div className="hidden md:flex items-center gap-6">
-            <Link href="/menu" className="text-sm font-medium hover:text-primary transition-colors">Menu</Link>
+            {!isVendor && (
+              <Link href="/menu" className="text-sm font-medium hover:text-primary transition-colors">Menu</Link>
+            )}
             <Link 
               href={user ? "/orders" : "/auth/login"} 
               className="text-sm font-medium hover:text-primary transition-colors"
@@ -195,6 +198,11 @@ export function Navbar({ cartCount: propCartCount = 0 }: { cartCount?: number })
                 <SheetTitle className="text-left font-headline font-bold text-accent">Menu</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col gap-4">
+                {!isVendor && (
+                  <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg" asChild>
+                    <Link href="/menu">Browse Menu</Link>
+                  </Button>
+                )}
                 <Button variant="ghost" className="justify-start font-bold h-12 rounded-xl text-lg" asChild>
                   <Link href={user ? "/orders" : "/auth/login"}>My Orders</Link>
                 </Button>

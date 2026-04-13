@@ -24,6 +24,7 @@ export default function Home() {
   }, [db, user]);
 
   const { data: userData } = useDoc(userDocRef);
+  const isVendor = userData?.userType === 'vendor';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -41,11 +42,13 @@ export default function Home() {
                 Skip the wait, never be late!
               </p>
               <div className="flex flex-wrap justify-center gap-4">
-                <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
-                  <Link href="/menu">Browse Menu</Link>
-                </Button>
+                {!isVendor && (
+                  <Button size="lg" className="rounded-full px-12 h-16 text-xl font-bold" asChild>
+                    <Link href="/menu">Browse Menu</Link>
+                  </Button>
+                )}
                 
-                {userData?.userType === 'vendor' && (
+                {isVendor && (
                   <Button size="lg" variant="secondary" className="rounded-full px-12 h-16 text-xl font-bold gap-3" asChild>
                     <Link href="/vendor/dashboard">
                       <LayoutDashboard className="h-6 w-6" />
@@ -114,7 +117,7 @@ export default function Home() {
           <div className="space-y-4">
             <h4 className="font-bold text-lg">Quick Links</h4>
             <ul className="space-y-2 opacity-70">
-              <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>
+              {!isVendor && <li><Link href="/menu" className="hover:text-primary">Menu</Link></li>}
               <li><Link href="/orders" className="hover:text-primary">Track Order</Link></li>
               <li><Link href="/about" className="hover:text-primary">About Us</Link></li>
             </ul>
@@ -128,7 +131,7 @@ export default function Home() {
                   <li><Link href="/auth/signup" className="hover:text-primary">Register Kitchen</Link></li>
                 </>
               )}
-              {userData?.userType === 'vendor' && (
+              {isVendor && (
                 <li><Link href="/vendor/dashboard" className="hover:text-primary">Vendor Dashboard</Link></li>
               )}
               <li><Link href="/policies" className="hover:text-primary">Vendor Policies</Link></li>
