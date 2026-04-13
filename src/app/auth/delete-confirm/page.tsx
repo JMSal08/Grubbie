@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { deleteUser, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, deleteDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { AlertCircle, Trash2, Loader2, ArrowLeft, ShieldAlert, Lock } from 'lucide-react';
 import Link from 'next/link';
@@ -45,16 +45,12 @@ export default function DeleteConfirmPage() {
         const customerProfileRef = doc(db, 'users', user.uid, 'customerProfile', 'profile');
         const vendorProfileRef = doc(db, 'users', user.uid, 'vendorProfile', 'profile');
 
-        // Mark user document as deleted and blocked
-        await setDoc(userRef, {
-          deletedAt: serverTimestamp(),
-          isBlocked: true,
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
-
-        // Hard delete the profile subcollection documents to ensure they are removed from collectionGroup queries
+        // Hard delete the profile subcollection documents first to ensure they are removed from collectionGroup queries
         await deleteDoc(customerProfileRef);
         await deleteDoc(vendorProfileRef);
+        
+        // Finally, hard delete the main user entry
+        await deleteDoc(userRef);
         
         // 3. Auth Account Deletion
         // Finally, remove the authentication record
