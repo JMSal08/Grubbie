@@ -14,7 +14,7 @@ import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
 import { firebaseConfig } from '@/firebase/config';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Store, ArrowLeft, ShieldCheck, Mail, Lock, MapPin } from 'lucide-react';
+import { Loader2, Store, ArrowLeft, ShieldCheck, Mail, Lock, MapPin, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function CreateVendorPage() {
