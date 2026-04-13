@@ -1,19 +1,45 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { UserRole } from '@/lib/types';
-import { ShieldAlert, Users, Store, Flag, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, Users, Store, Flag, ShieldCheck, Loader2 } from 'lucide-react';
 import { MOCK_USERS } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
 
 export default function AdminPortal() {
   const [users, setUsers] = useState(MOCK_USERS);
   const { toast } = useToast();
+  const { user, isUserLoading } = useUser();
+  const db = useFirestore();
+  const router = useRouter();
+
+  // Check if current user is in roles_admin
+  const adminDocRef = useMemoFirebase(() => {
+    if (!db || !user) return null;
+    return doc(db, 'roles_admin', user.uid);
+  }, [db, user]);
+
+  const { data: adminData, isLoading: isAdminLoading } = useDoc(adminDocRef);
+
+  useEffect(() => {
+    if (!isUserLoading && !isAdminLoading) {
+      if (!user || !adminData) {
+        toast({
+          variant: "destructive",
+          title: "Access Denied",
+          description: "You do not have administrative privileges.",
+        });
+        router.push('/');
+      }
+    }
+  }, [user, isUserLoading, adminData, isAdminLoading, router, toast]);
 
   const handleBlockUser = (id: string, currentlyBlocked: boolean) => {
     setUsers(users.map(u => u.id === id ? { ...u, isBlocked: !currentlyBlocked } : u));
@@ -23,6 +49,16 @@ export default function AdminPortal() {
       variant: currentlyBlocked ? "default" : "destructive"
     });
   };
+
+  if (isUserLoading || isAdminLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-secondary/10">
+        <Loader2 className="animate-spin text-primary h-8 w-8" />
+      </div>
+    );
+  }
+
+  if (!user || !adminData) return null;
 
   return (
     <div className="min-h-screen bg-secondary/10">
