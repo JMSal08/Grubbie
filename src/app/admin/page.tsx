@@ -151,7 +151,7 @@ export default function AdminPortal() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
           <h1 className="text-3xl font-headline font-bold text-accent">Admin Oversight Portal</h1>
           <Button asChild className="rounded-full gap-2 px-6 h-12 font-bold shadow-lg bg-primary text-primary-foreground hover:bg-primary/90">
-            <Link href="/auth/signup">
+            <Link href="/auth/signup?role=vendor">
               <PlusCircle className="h-5 w-5" />
               Create Vendor Account
             </Link>
