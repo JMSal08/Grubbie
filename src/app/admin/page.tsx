@@ -1,26 +1,24 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ShieldAlert, Users, Store, Flag, ShieldCheck, Loader2 } from 'lucide-react';
-import { MOCK_USERS } from '@/lib/mock-data';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useFirestore, useDoc, useMemoFirebase } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useUser, useFirestore, useDoc, useMemoFirebase, useCollection, updateDocumentNonBlocking } from '@/firebase';
+import { doc, collection, query, serverTimestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 export default function AdminPortal() {
-  const [users, setUsers] = useState(MOCK_USERS);
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const db = useFirestore();
   const router = useRouter();
 
-  // Check if current user is in roles_admin (Source of truth for security)
+  // 1. Check if current user is in roles_admin (Source of truth for security)
   const adminDocRef = useMemoFirebase(() => {
     if (!db || !user) return null;
     return doc(db, 'roles_admin', user.uid);
@@ -28,15 +26,30 @@ export default function AdminPortal() {
 
   const { data: adminData, isLoading: isAdminLoading } = useDoc(adminDocRef);
 
+  // 2. Fetch all users for management and stats
+  const allUsersQuery = useMemoFirebase(() => {
+    if (!db || !adminData) return null;
+    return query(collection(db, 'users'));
+  }, [db, adminData]);
+
+  const { data: usersData, isLoading: isUsersListLoading } = useCollection(allUsersQuery);
+
+  // 3. Derive stats from real data
+  const stats = useMemo(() => {
+    if (!usersData) return { customers: 0, vendors: 0 };
+    return {
+      customers: usersData.filter(u => u.userType === 'customer').length,
+      vendors: usersData.filter(u => u.userType === 'vendor').length
+    };
+  }, [usersData]);
+
   useEffect(() => {
-    // Only check permissions once both the user and the admin document check have settled
     if (!isUserLoading && !isAdminLoading) {
       if (!user) {
         router.push('/auth/login');
         return;
       }
       
-      // If we have a user but the admin document check returned null, they aren't authorized
       if (!adminData) {
         toast({
           variant: "destructive",
@@ -48,8 +61,15 @@ export default function AdminPortal() {
     }
   }, [user, isUserLoading, adminData, isAdminLoading, router, toast]);
 
-  const handleBlockUser = (id: string, currentlyBlocked: boolean) => {
-    setUsers(users.map(u => u.id === id ? { ...u, isBlocked: !currentlyBlocked } : u));
+  const handleBlockUser = (userId: string, currentlyBlocked: boolean) => {
+    if (!db) return;
+    const userRef = doc(db, 'users', userId);
+    
+    updateDocumentNonBlocking(userRef, {
+      isBlocked: !currentlyBlocked,
+      updatedAt: serverTimestamp()
+    });
+
     toast({
       title: currentlyBlocked ? "User Unblocked" : "User Blocked",
       description: `Action applied successfully.`,
@@ -65,7 +85,6 @@ export default function AdminPortal() {
     );
   }
 
-  // Final safety check: if everything is loaded and we don't have admin data, render nothing (useEffect will redirect)
   if (!user || !adminData) return null;
 
   return (
@@ -81,7 +100,7 @@ export default function AdminPortal() {
               <Users className="h-8 w-8 text-primary" />
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wider font-bold">Total Customers</p>
-                <h3 className="text-3xl font-bold">1,240</h3>
+                <h3 className="text-3xl font-bold">{isUsersListLoading ? '...' : stats.customers.toLocaleString()}</h3>
               </div>
             </CardContent>
           </Card>
@@ -90,7 +109,7 @@ export default function AdminPortal() {
               <Store className="h-8 w-8 text-accent" />
               <div>
                 <p className="text-sm text-muted-foreground uppercase tracking-wider font-bold">Active Vendors</p>
-                <h3 className="text-3xl font-bold">24</h3>
+                <h3 className="text-3xl font-bold">{isUsersListLoading ? '...' : stats.vendors.toLocaleString()}</h3>
               </div>
             </CardContent>
           </Card>
@@ -99,7 +118,7 @@ export default function AdminPortal() {
               <Flag className="h-8 w-8 text-red-600" />
               <div>
                 <p className="text-sm text-red-600 uppercase tracking-wider font-bold">Pending Reports</p>
-                <h3 className="text-3xl font-bold text-red-600">8</h3>
+                <h3 className="text-3xl font-bold text-red-600">0</h3>
               </div>
             </CardContent>
           </Card>
@@ -112,59 +131,69 @@ export default function AdminPortal() {
                 <CardTitle className="font-headline font-bold">User Management</CardTitle>
                 <p className="text-sm text-muted-foreground">Manage roles, block accounts, and resolve disputes</p>
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="rounded-full">All Roles</Button>
-                <Button variant="outline" size="sm" className="rounded-full">Blocked Only</Button>
-              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader className="bg-secondary/30">
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="font-bold">{user.name}</div>
-                      <div className="text-xs text-muted-foreground">{user.email}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="capitalize px-3">
-                        {user.role}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.isBlocked ? (
-                        <Badge variant="destructive" className="gap-1 px-3">
-                          <ShieldAlert className="h-3 w-3" /> Blocked
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1 px-3 bg-green-100 text-green-700 border-none">
-                          <ShieldCheck className="h-3 w-3" /> Active
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button 
-                        variant={user.isBlocked ? "outline" : "destructive"} 
-                        size="sm" 
-                        className="rounded-full"
-                        onClick={() => handleBlockUser(user.id, user.isBlocked)}
-                      >
-                        {user.isBlocked ? "Unblock Account" : "Block Account"}
-                      </Button>
-                    </TableCell>
+            {isUsersListLoading ? (
+              <div className="py-20 flex justify-center">
+                <Loader2 className="animate-spin text-primary h-8 w-8" />
+              </div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-secondary/30">
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {usersData?.map((u) => (
+                    <TableRow key={u.id}>
+                      <TableCell>
+                        <div className="font-bold">{u.email}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono">{u.id}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="capitalize px-3">
+                          {u.userType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {u.isBlocked ? (
+                          <Badge variant="destructive" className="gap-1 px-3">
+                            <ShieldAlert className="h-3 w-3" /> Blocked
+                          </Badge>
+                        ) : (
+                          <Badge variant="secondary" className="gap-1 px-3 bg-green-100 text-green-700 border-none">
+                            <ShieldCheck className="h-3 w-3" /> Active
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button 
+                          variant={u.isBlocked ? "outline" : "destructive"} 
+                          size="sm" 
+                          className="rounded-full"
+                          onClick={() => handleBlockUser(u.id, !!u.isBlocked)}
+                          disabled={u.id === user.uid} // Don't allow blocking self
+                        >
+                          {u.isBlocked ? "Unblock Account" : "Block Account"}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {(!usersData || usersData.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-10 text-muted-foreground">
+                        No users found.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </main>
