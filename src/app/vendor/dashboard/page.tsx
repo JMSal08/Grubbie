@@ -359,7 +359,7 @@ export default function VendorDashboard() {
                             {order.items?.map((item: any) => `${item.quantity}x ${item.name}`).join(', ')}
                           </div>
                           <div className="text-[10px] font-bold text-accent mt-1 uppercase tracking-tighter">
-                            {order.paymentMethod} • ₱{order.totalAmount} • Sched: {order.scheduledPickupDateTime ? format(new Date(order.scheduledPickupDateTime), 'h:mm a') : 'ASAP'}
+                            {order.paymentMethod} • ₱{order.totalAmount} • Sched: {order.scheduledPickupDateTime ? format(new Date(order.scheduledPickupDateTime), 'MMM d, h:mm a') : 'ASAP'}
                           </div>
                         </TableCell>
                         <TableCell>
